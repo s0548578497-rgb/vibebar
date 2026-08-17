@@ -11,7 +11,11 @@
 
 Daily and weekly digests with time totals are generated automatically and can be appended to an Obsidian note on a schedule.
 
-Requires [SwiftBar](https://github.com/swiftbar/SwiftBar), [superwhisper](https://superwhisper.com) and [macrowhisper](https://github.com/ognistik/macrowhisper). Install: `git clone` → `./install.sh`. Everything runs locally, nothing leaves your machine. Trigger words are configurable — the defaults are Russian. Docs below are in Russian; open an issue if you need them in English.
+Requires [SwiftBar](https://github.com/swiftbar/SwiftBar) (free), [macrowhisper](https://github.com/ognistik/macrowhisper) (free) and [superwhisper](https://superwhisper.com) — **paid**, with a limited free tier. The clipboard manager alone works with SwiftBar only.
+
+Install order matters: install the dependencies, run `macrowhisper --start-service` once so it writes its config, then `git clone` → `./install.sh`. Three steps stay manual — SwiftBar plugin folder, the superwhisper mode, and the Accessibility permission; the installer prints them at the end.
+
+Everything runs locally, nothing leaves your machine. Trigger words are configurable — the defaults are Russian. Docs below are in Russian; open an issue if you need them in English.
 
 ---
 
@@ -62,14 +66,36 @@ Requires [SwiftBar](https://github.com/swiftbar/SwiftBar), [superwhisper](https:
 
 ## Требования
 
-- macOS с Apple Silicon или Intel, `python3` (есть в системе)
-- [SwiftBar](https://github.com/swiftbar/SwiftBar) — `brew install --cask swiftbar`
-- [superwhisper](https://superwhisper.com) — для голосовой части
-- [macrowhisper](https://github.com/ognistik/macrowhisper) — `brew install ognistik/formulae/macrowhisper`
+| Что | Зачем | Цена |
+|---|---|---|
+| macOS | Apple Silicon или Intel | — |
+| `python3` | вся логика на нём | уже есть в системе |
+| [SwiftBar](https://github.com/swiftbar/SwiftBar) | рисует меню | бесплатно |
+| [superwhisper](https://superwhisper.com) | распознаёт речь | **платный**: подписка или разовая покупка. Есть бесплатный тариф с ограничениями |
+| [macrowhisper](https://github.com/ognistik/macrowhisper) | связывает superwhisper со скриптами | бесплатно, GPL-3.0 |
 
-Блокнот буфера обмена работает и без superwhisper.
+**Менеджер буфера обмена работает без superwhisper и macrowhisper** — если голосовая часть не нужна, хватит SwiftBar. Агенты дневной и недельной сводки при этом тоже не понадобятся.
 
 ## Установка
+
+Порядок важен: `install.sh` дописывает действия в конфиг macrowhisper, а тот появляется только после первого запуска сервиса. Если сделать наоборот, установку придётся повторить.
+
+**Шаг 1 — зависимости**
+
+```bash
+brew install --cask swiftbar
+brew install ognistik/formulae/macrowhisper
+```
+
+superwhisper скачайте с [superwhisper.com](https://superwhisper.com) и запустите хотя бы раз.
+
+**Шаг 2 — запустить сервис macrowhisper, чтобы он создал свой конфиг**
+
+```bash
+macrowhisper --start-service
+```
+
+**Шаг 3 — установка**
 
 ```bash
 git clone https://github.com/margulans/vibebar.git
@@ -77,15 +103,46 @@ cd vibebar
 ./install.sh
 ```
 
-Скрипт создаст `config.env`, соберёт плагин SwiftBar, поставит фоновые агенты и пропишет действия в macrowhisper (с резервной копией его конфига).
+Скрипт создаст `config.env`, соберёт плагин SwiftBar, поставит фоновые агенты и пропишет действия в macrowhisper, сделав резервную копию его конфига. Запускать повторно безопасно: существующий `config.env` не перезаписывается.
 
-Дальше руками, автоматизировать нельзя:
+**Шаг 4 — то, что автоматизировать нельзя**
 
-1. **superwhisper** → Settings → Modes → создать режим с именем из `VIBEBAR_MODE_NAME` (по умолчанию `Journal`), **Auto paste = Off**, назначить горячую клавишу. В остальных режимах Auto paste оставить **On**.
-2. Для автовставки из блокнота: **Системные настройки → Конфиденциальность → Универсальный доступ** → добавить SwiftBar.
-3. **SwiftBar → Refresh All**.
+1. **Папка плагинов SwiftBar.** Если при установке было предупреждение — SwiftBar → Preferences → Plugin Folder → укажите папку `swiftbar` внутри репозитория.
+2. **Режим superwhisper.** Settings → Modes → создайте режим с именем из `VIBEBAR_MODE_NAME` (по умолчанию `Journal`), **Auto paste = Off**, назначьте горячую клавишу. В остальных режимах Auto paste оставьте **On** — иначе обычная диктовка перестанет вставлять текст.
+3. **Разрешение на автовставку.** Системные настройки → Конфиденциальность и безопасность → Универсальный доступ → добавьте SwiftBar. Без него клик по записи блокнота положит текст в буфер обмена, но не вставит его.
+4. **SwiftBar → Refresh All.**
+
+**Шаг 5 — проверка**
+
+Нажмите горячую клавишу режима, скажите «работаю над установкой». В течение десяти секунд в меню-баре должна появиться эта фраза с таймером, а текст **не должен вставиться** в активное окно.
 
 Удаление — `./uninstall.sh`. Журнал, сводки и блокнот остаются на месте.
+
+## Если не работает
+
+Проверяйте по порядку, каждый пункт отсекает свой слой.
+
+**Ничего не появляется в меню, даже пустые блоки.** Плагин не подключён. `ls "$(defaults read com.ameba.SwiftBar PluginDirectory)"` — там должен быть `vibebar.3s.sh`. Нет — укажите папку плагинов вручную и нажмите Refresh All.
+
+**Меню есть, но фраза не попадает в журнал.** Смотрите, дошла ли она до macrowhisper:
+
+```bash
+python3 -c 'import json,glob,os
+d=sorted(glob.glob(os.path.expanduser("~/Documents/superwhisper/recordings/*/meta.json")),key=os.path.getmtime)
+print("режим:", json.load(open(d[-1])).get("modeName") if d else "записей нет")'
+```
+
+Имя режима должно **в точности** совпадать с `VIBEBAR_MODE_NAME`. Не совпадает — переименуйте режим в superwhisper или поправьте переменную.
+
+**Фраза попадает и в журнал, и в активное окно.** В режиме не выключен `Auto paste`. Либо в macrowhisper `defaults.activeAction` вставляет параллельно — должно быть `dictation`, не `autoPaste`.
+
+**Клик по записи блокнота не вставляет.** Нет разрешения в Универсальном доступе, либо мешает раскладка. Смотрите `clip.log` в папке репозитория: там пишется, что было активным окном и сработала ли клавиша.
+
+**В блокноте появляются собственные диктовки.** Значит macrowhisper не помечает их. Проверьте, что в его конфиге есть действие `dictation` и что `.dictations` в папке репозитория растёт.
+
+**Кириллица превращается в `?????`.** Не выставлена локаль в окружении, в котором запускается скрипт. Проверьте, что в `bin/vibebar-buf.sh` не затёрты строки с `LANG` и `__CF_USER_TEXT_ENCODING`.
+
+Логи: `clip.log` и `buf.log` в папке репозитория, `/tmp/com.vibebar.*.err` для агентов.
 
 ## Настройка
 
