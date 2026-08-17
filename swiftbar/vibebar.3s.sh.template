@@ -1,0 +1,111 @@
+#!/bin/bash
+# <bitbar.title>VibeBar</bitbar.title>
+# <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
+# <swiftbar.hideLastUpdated>true</swiftbar.hideLastUpdated>
+# <swiftbar.hideDisablePlugin>true</swiftbar.hideDisablePlugin>
+# <swiftbar.hideSwiftBar>false</swiftbar.hideSwiftBar>
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"
+ROOT="__ROOT__"; BIN="$ROOT/bin"
+[ -f "$ROOT/config.env" ] && . "$ROOT/config.env"
+LOG="${VIBEBAR_FILE:-$HOME/vibebar-journal.md}"
+OPENER="${VIBEBAR_OPENER:-TextEdit}"
+BUF="${VIBEBAR_BUFFER:-$ROOT/clipboard.txt}"
+
+echo "▸ $("$BIN/vibebar-now.sh" 2>/dev/null || echo '—')"
+echo "---"
+
+LOG="$LOG" BUF="$BUF" BIN="$BIN" python3 <<'PY'
+import re, datetime, os
+log, buf, bin_ = os.environ["LOG"], os.environ["BUF"], os.environ["BIN"]
+day = datetime.date.today().strftime("%Y-%m-%d")
+tasks, ideas, todos = [], [], []
+inday = False
+if os.path.exists(log):
+    for raw in open(log, encoding="utf-8"):
+        s = raw.rstrip("\n")
+        if s.strip() == "## " + day: inday = True; continue
+        if s.startswith("## "): inday = False
+        if not inday: continue
+        m = re.match(r"^-\s*(\d{1,2}:\d{2})\s*·\s*(.*)$", s)
+        if not m: continue
+        t, b = m.group(1), m.group(2).strip()
+        if   b.startswith("💡"): ideas.append((t, b[1:].strip()))
+        elif b.startswith("❗"): todos.append((t, b[1:].strip()))
+        elif b.startswith("⏸"): pass
+        else: tasks.append((t, b))
+
+GREEN, AMBER, RED, BLUE, GREY = "#2FA84F", "#C08A2E", "#D93025", "#3B7DD8", "#8a8a8e"
+def cut(s, n=46): return s if len(s) <= n else s[:n-1] + "…"
+
+def block(title, items, color, first=False):
+    if not first: print("---")
+    print("%s (%d) | size=10 color=%s" % (title, len(items), GREY))
+    if not items:
+        print("— пусто | size=12 color=%s" % GREY); return
+    for t, b in reversed(items[-7:]):
+        print("%s  %s | font=Menlo size=12 color=%s" % (t, cut(b), color))
+
+block("НАД ЧЕМ РАБОТАЛ", tasks, GREEN, first=True)
+block("ИДЕИ",           ideas, AMBER)
+block("НЕ ЗАБЫТЬ",      todos, RED)
+
+# ---- транзитный блокнот ----
+import base64, unicodedata
+entries = []
+if os.path.exists(buf):
+    for i, l in enumerate(open(buf, encoding="utf-8"), 1):
+        l = l.strip()
+        if not l: continue
+        try: txt = base64.b64decode(l).decode("utf-8", "replace")
+        except Exception: continue
+        entries.append((i, txt))
+
+def preview(txt, n=42):
+    lines = [x for x in txt.splitlines() if x.strip()]
+    one = " ".join(" ".join(lines).split())
+    one = "".join(c for c in one if unicodedata.category(c)[0] != "C")
+    tag = ""
+    if len(lines) > 1: tag = "  +%d стр." % (len(lines) - 1)
+    elif len(one) > n: tag = " …"
+    body = one[:n].rstrip()
+    if len(one) > n and not tag.startswith(" ¶"): body = one[:n-1].rstrip()
+    return (body + tag) if tag else body
+
+def tip(txt, limit=220):
+    # подсказка при наведении: весь текст. Переводы строк заменяем на ⏎,
+    # вертикальную черту — на ¦, иначе SwiftBar примет её за начало параметров
+    t = txt[:limit] + ("…" if len(txt) > limit else "")
+    t = t.replace("|", "¦").replace('"', "'")
+    t = "".join(c if c not in "\r\n" else " ⏎ " for c in t)
+    t = "".join(c for c in t if unicodedata.category(c)[0] != "C")
+    return " ".join(t.split())
+
+print("---")
+print("БУФЕР ОБМЕНА (%d) | size=10 color=%s" % (len(entries), GREY))
+print("＋  Забрать текущий ⌘C | bash=%s/vibebar-buf.sh param1=add terminal=false refresh=true color=%s" % (bin_, BLUE))
+
+shown = list(reversed(entries))[:10]
+for n, (idx, txt) in enumerate(shown, 1):
+    print("%d  %s | bash=%s/vibebar-buf.sh param1=copy param2=%d terminal=false font=Menlo size=12 color=%s tooltip=\"%s\""
+          % (n, preview(txt), bin_, idx, BLUE, tip(txt)))
+
+if entries:
+    print("👁  Показать запись целиком | size=12 color=%s" % GREY)
+    for n, (idx, txt) in enumerate(shown, 1):
+        print("--%d  %s | bash=%s/vibebar-buf.sh param1=show param2=%d terminal=false font=Menlo size=12 color=%s"
+              % (n, preview(txt, 38), bin_, idx, BLUE))
+    print("✕  Удалить из блокнота | size=12 color=%s" % GREY)
+    for n, (idx, txt) in enumerate(shown, 1):
+        print("--%d  %s | bash=%s/vibebar-buf.sh param1=del param2=%d terminal=false refresh=true font=Menlo size=12 color=%s tooltip=\"%s\""
+              % (n, preview(txt, 38), bin_, idx, RED, tip(txt)))
+    print("-----")
+    print("--Очистить всё | bash=%s/vibebar-buf.sh param1=clear terminal=false refresh=true color=%s" % (bin_, RED))
+PY
+
+echo "---"
+echo "Править журнал | bash=/usr/bin/open param1=-a param2=$OPENER param3=$LOG terminal=false refresh=true"
+echo "Сводка за день — открыть | bash=$BIN/vibebar-day.sh terminal=false"
+echo "Сводка за день — пересобрать | bash=$BIN/vibebar-day.sh param1=--rebuild terminal=false"
+echo "Перенести сводку в заметки | bash=$BIN/vibebar-push-vault.sh terminal=false"
+echo "Обновить сейчас | refresh=true"

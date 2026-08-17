@@ -1,0 +1,11 @@
+# личные данные — в репозиторий не попадают
+config.env
+clipboard.txt
+.dictations
+digests/
+*.log
+*.bak
+vibebar-journal.md
+.DS_Store
+swiftbar/vibebar.*.sh
+launchd/*.plist
