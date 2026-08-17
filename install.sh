@@ -48,7 +48,7 @@ say "5. macrowhisper"
 MW="$HOME/.config/macrowhisper/macrowhisper.json"
 if [ -f "$MW" ]; then
   cp "$MW" "$MW.bak.$(date +%s)"
-  ROOT="$ROOT" MODE="${VIBEBAR_MODE_NAME:-Журнал}" python3 - "$MW" <<'PY'
+  ROOT="$ROOT" MODE="${VIBEBAR_MODE_NAME:-Journal}" python3 - "$MW" <<'PY'
 import json, sys, os, collections
 p = sys.argv[1]; root = os.environ["ROOT"]; mode = os.environ["MODE"]
 cfg = json.load(open(p, encoding="utf-8"), object_pairs_hook=collections.OrderedDict)
@@ -73,7 +73,7 @@ fi
 
 say "Готово. Осталось руками:"
 cat <<TXT
-  1. superwhisper → Settings → Modes → создайте режим «${VIBEBAR_MODE_NAME:-Журнал}»,
+  1. superwhisper → Settings → Modes → создайте режим «${VIBEBAR_MODE_NAME:-Journal}»,
      Auto paste = Off, назначьте горячую клавишу.
      В остальных режимах Auto paste оставьте On.
   2. Для автовставки из блокнота: Системные настройки → Конфиденциальность →

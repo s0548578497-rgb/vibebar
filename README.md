@@ -1,10 +1,19 @@
 # VibeBar
 
+> **English:** VibeBar is a macOS menu-bar app that turns your voice into a work journal and doubles as a clipboard manager.
+> Press a hotkey, say what you're working on — it lands in a journal, the current task shows in the menu bar with a timer.
+> Ideas and reminders are routed by the first word you say. Daily and weekly digests with time totals are generated automatically.
+> The clipboard part keeps your last 15 copies and pastes any of them back with one click — handy when shuttling text between an LLM and a terminal.
+> Requires [SwiftBar](https://github.com/swiftbar/SwiftBar), [superwhisper](https://superwhisper.com) and [macrowhisper](https://github.com/ognistik/macrowhisper).
+> Install: `git clone` → `./install.sh`. Everything runs locally. Docs below are in Russian — open an issue if you need them in English.
+
 **Голосовой трекер задач, идей и напоминаний + транзитный блокнот буфера обмена. Для macOS, живёт в меню-баре.**
 
 Нажал горячую клавишу — сказал, чем занят — запись в журнале, текущая задача видна в меню-баре. Скопировал что-то в одном окне — достал одним кликом в другом. В конце дня — сводка с интервалами и часами, в конце недели — на что ушло время.
 
 Сделано для тех, кто целыми днями гоняет текст между LLM и терминалом и к вечеру не помнит, чем занимался.
+
+![VibeBar в меню-баре](docs/screenshot.png)
 
 ---
 
@@ -43,7 +52,7 @@
 ## Установка
 
 ```bash
-git clone https://github.com/<ваш-логин>/vibebar.git
+git clone https://github.com/margulans/vibebar.git
 cd vibebar
 ./install.sh
 ```
@@ -52,7 +61,7 @@ cd vibebar
 
 Дальше руками, автоматизировать нельзя:
 
-1. **superwhisper** → Settings → Modes → создать режим с именем из `VIBEBAR_MODE_NAME` (по умолчанию `Журнал`), **Auto paste = Off**, назначить горячую клавишу. В остальных режимах Auto paste оставить **On**.
+1. **superwhisper** → Settings → Modes → создать режим с именем из `VIBEBAR_MODE_NAME` (по умолчанию `Journal`), **Auto paste = Off**, назначить горячую клавишу. В остальных режимах Auto paste оставить **On**.
 2. Для автовставки из блокнота: **Системные настройки → Конфиденциальность → Универсальный доступ** → добавить SwiftBar.
 3. **SwiftBar → Refresh All**.
 
@@ -69,7 +78,7 @@ cd vibebar
 | `VIBEBAR_BUFFER_MAX` | 15 | сколько записей хранит блокнот |
 | `VIBEBAR_AUTOPASTE` | 1 | клик по записи вставляет в активное окно |
 | `VIBEBAR_CLEAN_TERMINAL` | 1 | срезать приглашение терминала |
-| `VIBEBAR_MODE_NAME` | `Журнал` | имя режима superwhisper |
+| `VIBEBAR_MODE_NAME` | `Journal` | имя режима superwhisper |
 | `VIBEBAR_PROMPT_RE` | под macOS | шаблон приглашения терминала — поправьте под своё |
 
 Формат журнала — обычный markdown, правится руками:
