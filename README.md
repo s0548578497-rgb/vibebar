@@ -1,11 +1,19 @@
 # VibeBar
 
-> **English:** VibeBar is a macOS menu-bar app that turns your voice into a work journal and doubles as a clipboard manager.
-> Press a hotkey, say what you're working on — it lands in a journal, the current task shows in the menu bar with a timer.
-> Ideas and reminders are routed by the first word you say. Daily and weekly digests with time totals are generated automatically.
-> The clipboard part keeps your last 15 copies and pastes any of them back with one click — handy when shuttling text between an LLM and a terminal.
-> Requires [SwiftBar](https://github.com/swiftbar/SwiftBar), [superwhisper](https://superwhisper.com) and [macrowhisper](https://github.com/ognistik/macrowhisper).
-> Install: `git clone` → `./install.sh`. Everything runs locally. Docs below are in Russian — open an issue if you need them in English.
+**English** · A macOS menu-bar app. Say what you're doing — it logs itself. Four tools in one menu:
+
+| | |
+|---|---|
+| **Task tracker** | Hit a hotkey, say what you're working on. It shows in the menu bar with a running timer; the next phrase closes the previous task. Durations are derived from the gaps — nothing to start or stop. |
+| **Ideas** | Say "идея / idea …" and the thought goes to its own list without touching the current task. |
+| **Reminders** | Say "не забыть / remind …" and it lands in a red list, becoming a checkbox in the daily digest. |
+| **Clipboard manager** | Your last 15 copies, one click to paste any of them back. Copied terminal sessions get the shell prompt stripped automatically, and output is wrapped in a code fence for pasting into a chat. |
+
+Daily and weekly digests with time totals are generated automatically and can be appended to an Obsidian note on a schedule.
+
+Requires [SwiftBar](https://github.com/swiftbar/SwiftBar), [superwhisper](https://superwhisper.com) and [macrowhisper](https://github.com/ognistik/macrowhisper). Install: `git clone` → `./install.sh`. Everything runs locally, nothing leaves your machine. Trigger words are configurable — the defaults are Russian. Docs below are in Russian; open an issue if you need them in English.
+
+---
 
 **Четыре инструмента в одном пункте меню-бара: трекер задач, копилка идей, напоминания и менеджер буфера обмена.**
 
