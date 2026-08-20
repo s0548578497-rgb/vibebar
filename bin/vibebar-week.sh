@@ -12,15 +12,6 @@ mkdir -p "$DIR"
 OUT="$DIR/неделя-$END.md"
 python3 "$BIN/vibebar-week.py" "$LOG" "$END" > "$OUT"
 
-OUT="$OUT" DST="$DST" python3 - <<'PY'
-import os, re
-src, dst = os.environ["OUT"], os.path.expanduser(os.environ["DST"])
-body = open(src, encoding="utf-8").read().strip()
-head = body.split("\n", 1)[0]
-cur = open(dst, encoding="utf-8").read()
-if head in cur:
-    print("недельная сводка уже перенесена"); raise SystemExit
-open(dst, "a", encoding="utf-8").write("\n" + body + "\n")
-print("недельная сводка добавлена")
-PY
+HEAD="$(head -1 "$OUT")"
+cat "$OUT" | python3 "$BIN/_vault_insert.py" "$DST" "$HEAD"
 echo "$OUT"

@@ -35,7 +35,8 @@ if os.path.exists(log):
         elif b.startswith("⏸"): pass
         else: tasks.append((t, b))
 
-GREEN, AMBER, RED, BLUE, GREY = "#2FA84F", "#C08A2E", "#D93025", "#3B7DD8", "#8a8a8e"
+# два значения = цвет для светлой и тёмной темы меню
+GREEN, AMBER, RED, BLUE, GREY = ("#15803D,#4ADE80", "#B45309,#F0B34A", "#B91C1C,#F87171", "#1D4ED8,#7DA8F5", "#8a8a8e,#8a8a8e")
 def cut(s, n=46): return s if len(s) <= n else s[:n-1] + "…"
 
 def block(title, items, color, first=False):

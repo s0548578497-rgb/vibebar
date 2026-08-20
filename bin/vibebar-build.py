@@ -26,7 +26,12 @@ for s in lines:
 ev.sort(key=lambda x: x[0])
 rows, total = [], datetime.timedelta()
 for i, (t, b) in enumerate(ev):
-    end = ev[i+1][0] if i+1 < len(ev) else datetime.datetime.now()
+    if i + 1 < len(ev):
+        end = ev[i+1][0]
+    elif day == datetime.date.today().isoformat():
+        end = datetime.datetime.now()          # текущая задача идёт прямо сейчас
+    else:
+        continue                                # прошлый день, последняя запись не закрыта — не считаем
     if b.startswith("⏸"): continue
     d = end - t
     if d.total_seconds() <= 0: continue
