@@ -13,3 +13,5 @@ demo/
 config.env.real
 __pycache__/
 *.py[cod]
+.venv-windows/
+windows/settings.json

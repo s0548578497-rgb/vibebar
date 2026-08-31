@@ -10,6 +10,7 @@ from vibebar_modular.nulls import NullRecycleBin
 from vibebar_modular.sockets import SocketSet
 
 from .menu import WindowsMenuSocket
+from .files import WindowsFileOpenerSocket
 from .paths import discover
 from .runner import WindowsBashRunner
 
@@ -19,7 +20,7 @@ def assemble_windows(
     environment: dict[str, str] | None = None,
     allow_deletion: bool = False,
 ) -> SocketSet:
-    configured = _default_environment(repository)
+    configured = default_environment(repository)
     if environment is not None:
         configured.update(environment)
     runner = WindowsBashRunner(discover(repository), configured)
@@ -30,11 +31,12 @@ def assemble_windows(
         recycle_bin=recycle_bin,
         digest=LegacyDigestSocket(repository, runner),
         menu=WindowsMenuSocket(),
+        opener=WindowsFileOpenerSocket(),
         clock=SystemClock(),
     )
 
 
-def _default_environment(repository: Path) -> dict[str, str]:
+def default_environment(repository: Path) -> dict[str, str]:
     return {
         "VIBEBAR_FILE": str(Path.home() / "vibebar-journal.md"),
         "VIBEBAR_BUFFER": str(repository / "clipboard.txt"),

@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+ROOT="${VIBEBAR_WINDOWS_ROOT:?}"
+SHIMS="${VIBEBAR_WINDOWS_SHIMS:?}"
+TEMPLATE="$ROOT/swiftbar/vibebar.3s.sh.template"
+sed \
+  -e "s|__ROOT__|$ROOT|g" \
+  -e "s|^export PATH=.*|export PATH=\"$SHIMS:/usr/bin:/bin:\${PATH:-}\"|" \
+  "$TEMPLATE" | bash

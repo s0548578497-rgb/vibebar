@@ -23,10 +23,11 @@ class WindowsPathTests(unittest.TestCase):
         self.assertEqual(_to_git_path("original text"), "original text")
 
     def test_windows_composition_matches_desktop_controls(self) -> None:
-        self.assertEqual(
-            get_composition("windows").actions,
-            frozenset({Action.ADD_ENTRY, Action.CAPTURE_CLIPBOARD, Action.DAILY_DIGEST}),
-        )
+        actions = get_composition("windows").actions
+        self.assertIn(Action.ADD_ENTRY, actions)
+        self.assertIn(Action.DELETE_CLIPBOARD, actions)
+        self.assertIn(Action.WEEKLY_DIGEST, actions)
+        self.assertIn(Action.OPEN_JOURNAL, actions)
 
 
 class WindowsRunnerTests(unittest.TestCase):

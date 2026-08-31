@@ -75,3 +75,11 @@ class LegacyMenuSocket:
 
     def refresh(self) -> CommandResult:
         return self.runner.run(("open", "swiftbar://refreshallplugins"))
+
+
+@dataclass(frozen=True, slots=True)
+class LegacyFileOpenerSocket:
+    runner: CommandRunner
+
+    def open(self, path: Path) -> CommandResult:
+        return self.runner.run(("open", str(path)))

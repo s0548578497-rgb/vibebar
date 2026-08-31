@@ -52,6 +52,10 @@ class MenuSocket(Protocol):
     def refresh(self) -> CommandResult: ...
 
 
+class FileOpenerSocket(Protocol):
+    def open(self, path: Path) -> CommandResult: ...
+
+
 class Paths(Protocol):
     @property
     def repository(self) -> Path: ...

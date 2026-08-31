@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .clock import SystemClock
-from .contracts import ClipboardSocket, Clock, DigestSocket, EntrySocket, MenuSocket, RecycleBinSocket
-from .legacy import LegacyClipboardSocket, LegacyDigestSocket, LegacyEntrySocket, LegacyMenuSocket, LegacyRecycleBin
-from .nulls import NullClipboardSocket, NullDigestSocket, NullEntrySocket, NullMenuSocket, NullRecycleBin
+from .contracts import ClipboardSocket, Clock, DigestSocket, EntrySocket, FileOpenerSocket, MenuSocket, RecycleBinSocket
+from .legacy import LegacyClipboardSocket, LegacyDigestSocket, LegacyEntrySocket, LegacyFileOpenerSocket, LegacyMenuSocket, LegacyRecycleBin
+from .nulls import NullClipboardSocket, NullDigestSocket, NullEntrySocket, NullFileOpenerSocket, NullMenuSocket, NullRecycleBin
 from .runner import SubprocessRunner
 
 
@@ -19,6 +19,7 @@ class SocketSet:
     recycle_bin: RecycleBinSocket
     digest: DigestSocket
     menu: MenuSocket
+    opener: FileOpenerSocket
     clock: Clock
 
 
@@ -35,6 +36,7 @@ def build_sockets(root: Path, mode: str = "identity", allow_deletion: bool = Fal
         recycle_bin=recycle_bin,
         digest=LegacyDigestSocket(root, runner),
         menu=LegacyMenuSocket(runner),
+        opener=LegacyFileOpenerSocket(runner),
         clock=SystemClock(),
     )
 
@@ -46,5 +48,6 @@ def _sealed_sockets() -> SocketSet:
         recycle_bin=NullRecycleBin(),
         digest=NullDigestSocket(),
         menu=NullMenuSocket(),
+        opener=NullFileOpenerSocket(),
         clock=SystemClock(),
     )

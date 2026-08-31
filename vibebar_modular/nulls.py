@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 from .contracts import CommandResult
 
@@ -52,4 +53,9 @@ class NullDigestSocket:
 
 class NullMenuSocket:
     def refresh(self) -> CommandResult:
+        return _sealed()
+
+
+class NullFileOpenerSocket:
+    def open(self, path: Path) -> CommandResult:
         return _sealed()

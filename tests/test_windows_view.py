@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+from vibebar_windows.language import LanguageController
+from vibebar_windows.view_model import parse_swiftbar_output
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class LegacyViewTests(unittest.TestCase):
+    def test_original_swiftbar_sections_become_typed_view(self) -> None:
+        output = """▸ current task · 4m
+---
+TASKS (1) | color=x
+12:00  first task | color=x
+---
+IDEAS (1) | color=x
+12:01  useful idea | color=x
+---
+TODOS (1) | color=x
+12:02  call later | color=x
+---
+CLIPBOARD (1) | color=x
+capture | action=x
+1  copied text | param2=7 color=x
+👁 show | color=x
+---
+actions
+"""
+        view = parse_swiftbar_output(output)
+        self.assertEqual(view.current, "current task · 4m")
+        self.assertEqual(view.tasks[0].text, "first task")
+        self.assertEqual(view.ideas[0].text, "useful idea")
+        self.assertEqual(view.todos[0].text, "call later")
+        self.assertEqual(view.clipboard[0].source_index, 7)
+
+
+class LanguageTests(unittest.TestCase):
+    def test_language_switch_is_persisted_and_replaceable(self) -> None:
+        locale_dir = ROOT / "windows" / "locales"
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            settings = Path(directory) / "settings.json"
+            controller = LanguageController(locale_dir, settings)
+            self.assertEqual(controller.catalog.code, "he")
+            self.assertEqual(controller.switch().code, "ru")
+            self.assertEqual(json.loads(settings.read_text(encoding="utf-8"))["language"], "ru")
+
+    def test_every_locale_has_the_same_contract(self) -> None:
+        locale_dir = ROOT / "windows" / "locales"
+        catalogs = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(locale_dir.glob("*.json"))]
+        expected = set(catalogs[0])
+        self.assertTrue(all(set(catalog) == expected for catalog in catalogs[1:]))
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,30 +1,57 @@
 # VibeBar on Windows
 
-The Windows adapter runs the original VibeBar scripts through Git Bash. It does
-not duplicate classification, journal, clipboard-buffer, or digest logic.
+The Windows edition wraps the original VibeBar scripts through Git Bash. Task
+classification, journal format, timing, reports, and clipboard-buffer behavior
+remain the original implementation.
 
-## Requirements
+## Included
 
-- Windows 10 or newer
-- Python 3.11 or newer with Tkinter
-- Git for Windows, including Git Bash
+- live current-task timer;
+- today's tasks, ideas, and reminders;
+- the last clipboard entries with copy, delete, and clear actions;
+- opt-in automatic clipboard monitoring;
+- daily and weekly reports and journal opening;
+- minimize-to-tray behavior;
+- live language switching between Hebrew, Russian, and English.
+- fully local `Hey Jarvis` wake word followed by local Whisper transcription.
 
-## Start
+Language catalogs are independent JSON files in `windows/locales`. Adding a
+language requires one new catalog with the same keys; no UI code changes.
 
-From PowerShell:
+## Requirements and setup
+
+- Windows 10 or newer;
+- Python 3.11 or newer with Tkinter;
+- Git for Windows, including Git Bash.
+
+Run once from PowerShell:
+
+```powershell
+.\windows\setup.ps1
+```
+
+Start the application:
 
 ```powershell
 .\windows\start_vibebar.ps1
 ```
 
-The window can submit an activity, capture the current clipboard item, and open
-the daily digest. Data remains in the same plain-text formats as macOS.
+`start_vibebar.cmd` can also be opened directly. To start VibeBar automatically
+after signing in, run `windows/install.ps1`. `windows/uninstall.ps1` removes only
+the startup shortcut and deliberately keeps all user data.
 
-Default files:
+## Data
 
 - Journal: `%USERPROFILE%\vibebar-journal.md`
 - Clipboard history: `clipboard.txt` in this repository
 - Digests: `digests` in this repository
+- UI preference: `windows/settings.json`
 
-Automatic paste is disabled on Windows by default. Deletion also remains sealed
-unless a composition explicitly enables the real recycle-bin socket.
+Clipboard monitoring is off by default because copied text can contain secrets.
+Deletion is connected only in the explicit Windows composition. The application
+does not send journal or clipboard content over the network.
+
+Voice listening is also off by default. When enabled, openWakeWord continuously
+checks the microphone locally for `Hey Jarvis`. Only after detection is a command
+captured and transcribed by local Whisper. Raw audio is kept in memory and is not
+written to disk.

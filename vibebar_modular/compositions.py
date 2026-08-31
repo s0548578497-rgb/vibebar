@@ -16,6 +16,8 @@ class Action(str, Enum):
     DAILY_DIGEST = "daily_digest"
     WEEKLY_DIGEST = "weekly_digest"
     PUBLISH_DIGEST = "publish_digest"
+    OPEN_JOURNAL = "open_journal"
+    VOICE_INPUT = "voice_input"
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,7 +36,19 @@ PILOT = Composition(
 
 WINDOWS = Composition(
     "windows",
-    frozenset({Action.ADD_ENTRY, Action.CAPTURE_CLIPBOARD, Action.DAILY_DIGEST}),
+    frozenset({
+        Action.ADD_ENTRY,
+        Action.CAPTURE_CLIPBOARD,
+        Action.VIEW_CLIPBOARD,
+        Action.COPY_CLIPBOARD,
+        Action.DELETE_CLIPBOARD,
+        Action.CLEAR_CLIPBOARD,
+        Action.DAILY_DIGEST,
+        Action.WEEKLY_DIGEST,
+        Action.PUBLISH_DIGEST,
+        Action.OPEN_JOURNAL,
+        Action.VOICE_INPUT,
+    }),
 )
 
 FULL = Composition("full", frozenset(Action))

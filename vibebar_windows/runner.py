@@ -37,6 +37,7 @@ class WindowsBashRunner:
                 environment[name] = _to_git_path(environment[name])
         environment["VIBEBAR_PYTHON"] = _to_git_path(str(self.paths.python))
         environment["VIBEBAR_WINDOWS_ROOT"] = _to_git_path(str(self.paths.repository))
+        environment["VIBEBAR_WINDOWS_SHIMS"] = _to_git_path(str(self.paths.shims))
         environment["PYTHONUTF8"] = "1"
         environment["PYTHONIOENCODING"] = "utf-8"
         git_root = self.paths.bash.parent.parent
