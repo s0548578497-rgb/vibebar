@@ -11,3 +11,5 @@ swiftbar/vibebar.*.sh
 launchd/*.plist
 demo/
 config.env.real
+__pycache__/
+*.py[cod]
