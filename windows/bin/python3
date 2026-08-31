@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+for NAME in VIBEBAR_FILE VIBEBAR_DIGEST_DIR VIBEBAR_VAULT_FILE VIBEBAR_BUFFER SW_RECORDINGS LOG BUF MARKS LOGF SRC DST; do
+  VALUE="${!NAME:-}"
+  if [[ "$VALUE" =~ ^/[a-zA-Z]/ ]]; then
+    printf -v "$NAME" '%s' "$(cygpath -w "$VALUE")"
+    export "$NAME"
+  fi
+done
+exec "${VIBEBAR_PYTHON:?Windows Python path is not configured}" "$@"

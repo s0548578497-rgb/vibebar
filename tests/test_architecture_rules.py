@@ -6,12 +6,12 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "vibebar_modular"
+PACKAGES = (ROOT / "vibebar_modular", ROOT / "vibebar_windows", ROOT / "windows" / "helpers")
 
 
 class ArchitectureRulesTests(unittest.TestCase):
     def source_files(self) -> list[Path]:
-        return sorted(PACKAGE.glob("*.py"))
+        return sorted(path for package in PACKAGES for path in package.glob("*.py"))
 
     def test_files_do_not_exceed_400_lines(self) -> None:
         oversized = [path.name for path in self.source_files() if len(path.read_text(encoding="utf-8").splitlines()) > 400]

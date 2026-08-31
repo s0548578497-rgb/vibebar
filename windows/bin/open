@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+TARGET="${!#:-}"
+[ -n "$TARGET" ] || exit 0
+WINDOWS_TARGET="$(cygpath -w "$TARGET")"
+exec python3 "${VIBEBAR_WINDOWS_ROOT:?}/windows/helpers/open_path.py" "$WINDOWS_TARGET"

@@ -8,6 +8,7 @@ from enum import Enum
 
 class Action(str, Enum):
     ADD_ENTRY = "add_entry"
+    CAPTURE_CLIPBOARD = "capture_clipboard"
     VIEW_CLIPBOARD = "view_clipboard"
     COPY_CLIPBOARD = "copy_clipboard"
     DELETE_CLIPBOARD = "delete_clipboard"
@@ -28,14 +29,19 @@ class Composition:
 
 PILOT = Composition(
     "pilot",
-    frozenset({Action.ADD_ENTRY, Action.VIEW_CLIPBOARD, Action.COPY_CLIPBOARD}),
+    frozenset({Action.ADD_ENTRY, Action.CAPTURE_CLIPBOARD, Action.VIEW_CLIPBOARD, Action.COPY_CLIPBOARD}),
+)
+
+WINDOWS = Composition(
+    "windows",
+    frozenset({Action.ADD_ENTRY, Action.CAPTURE_CLIPBOARD, Action.DAILY_DIGEST}),
 )
 
 FULL = Composition("full", frozenset(Action))
 
 
 def get_composition(name: str) -> Composition:
-    compositions = {PILOT.name: PILOT, FULL.name: FULL}
+    compositions = {PILOT.name: PILOT, WINDOWS.name: WINDOWS, FULL.name: FULL}
     if name not in compositions:
         raise ValueError(f"unknown composition: {name}")
     return compositions[name]
