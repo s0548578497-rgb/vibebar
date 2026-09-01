@@ -10,16 +10,20 @@ import winsound
 
 import numpy as np
 
+from .transcription import AudioTranscriber
+
 
 class VoiceController:
     def __init__(
         self,
         on_text: Callable[[str], None],
         on_status: Callable[[str], None],
+        transcriber: AudioTranscriber,
         model_dir: Path | None = None,
     ) -> None:
         self.on_text = on_text
         self.on_status = on_status
+        self.transcriber = transcriber
         local = Path(os.environ.get("LOCALAPPDATA", Path.home()))
         self.model_dir = model_dir or local / "VibeBar" / "models"
         self.stop_event = threading.Event()
@@ -60,15 +64,7 @@ class VoiceController:
 
     def _listen_loop(self) -> None:
         import sounddevice as sd
-        from faster_whisper import WhisperModel
-
         wake_model = self._wake_model()
-        whisper = WhisperModel(
-            "Systran/faster-whisper-small",
-            device="cpu",
-            compute_type="int8",
-            local_files_only=True,
-        )
         self.on_status("voice_listening")
         with sd.InputStream(samplerate=16_000, channels=1, dtype="int16", blocksize=1_280) as stream:
             while not self.stop_event.is_set():
@@ -79,7 +75,7 @@ class VoiceController:
                     winsound.Beep(880, 120)
                     self.on_status("voice_command")
                     audio = self._capture_command(stream)
-                    text = self._transcribe(whisper, audio)
+                    text = self.transcriber.transcribe(audio)
                     if text:
                         self.on_text(text)
                     self.on_status("voice_listening")
@@ -117,10 +113,6 @@ class VoiceController:
                 break
         return np.concatenate(frames) if frames else np.array([], dtype=np.int16)
 
-    @staticmethod
-    def _transcribe(model: object, audio: np.ndarray) -> str:
-        if audio.size == 0:
-            return ""
-        samples = audio.astype(np.float32) / 32768.0
-        segments, _info = model.transcribe(samples, beam_size=3, vad_filter=True)
-        return " ".join(segment.text.strip() for segment in segments if segment.text.strip()).strip()
+    def close(self) -> None:
+        self.stop()
+        self.transcriber.close()

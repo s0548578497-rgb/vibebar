@@ -12,6 +12,7 @@ from vibebar_modular.contracts import CommandResult
 
 from .assembly import assemble_windows, default_environment
 from .clipboard_watcher import ClipboardWatcher
+from .cpp_whisper import CppTurboTranscriber
 from .language import LanguageController
 from .paths import discover
 from .runner import WindowsBashRunner
@@ -35,7 +36,11 @@ class VibeBarWindow:
         self.status = tk.StringVar()
         self.trees: dict[str, ttk.Treeview] = {}
         self.watcher = ClipboardWatcher(self.root, self.sockets.clipboard, self.refresh)
-        self.voice = VoiceController(self.voice_text_from_thread, self.voice_status_from_thread)
+        self.voice = VoiceController(
+            self.voice_text_from_thread,
+            self.voice_status_from_thread,
+            CppTurboTranscriber(repository),
+        )
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
         self._configure_window()
         self._build()
@@ -287,7 +292,7 @@ class VibeBarWindow:
 
     def quit(self) -> None:
         self.watcher.stop()
-        self.voice.stop()
+        self.voice.close()
         self.tray.stop()
         self.root.destroy()
 

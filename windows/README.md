@@ -13,7 +13,8 @@ remain the original implementation.
 - daily and weekly reports and journal opening;
 - minimize-to-tray behavior;
 - live language switching between Hebrew, Russian, and English.
-- fully local `Hey Jarvis` wake word followed by local Whisper transcription.
+- fully local `Hey Jarvis` wake word followed by the existing whisper.cpp
+  Large-v3-Turbo/Vulkan engine from the parent `kodex` workspace.
 
 Language catalogs are independent JSON files in `windows/locales`. Adding a
 language requires one new catalog with the same keys; no UI code changes.
@@ -53,5 +54,6 @@ does not send journal or clipboard content over the network.
 
 Voice listening is also off by default. When enabled, openWakeWord continuously
 checks the microphone locally for `Hey Jarvis`. Only after detection is a command
-captured and transcribed by local Whisper. Raw audio is kept in memory and is not
-written to disk.
+captured and transcribed by the local C++ Turbo server on `127.0.0.1`. The C++
+CLI requires a temporary WAV; it is deleted immediately after transcription and
+is never sent outside the computer.
