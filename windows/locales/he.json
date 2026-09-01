@@ -36,5 +36,9 @@
   "open": "פתח",
   "quit": "יציאה",
   "show_window": "הצג חלון",
-  "hide_window": "הסתר למגש"
+  "hide_window": "הסתר למגש",
+  "custom_commands": "פקודות אישיות",
+  "add_command": "הוסף פקודה",
+  "command_phrase": "מה אומרים",
+  "command_kind": "לאן למיין"
 }

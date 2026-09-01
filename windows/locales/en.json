@@ -36,5 +36,9 @@
   "open": "Open",
   "quit": "Quit",
   "show_window": "Show window",
-  "hide_window": "Hide to tray"
+  "hide_window": "Hide to tray",
+  "custom_commands": "Custom commands",
+  "add_command": "Add command",
+  "command_phrase": "Spoken phrase",
+  "command_kind": "Destination"
 }

@@ -13,6 +13,7 @@ from vibebar_modular.contracts import CommandResult
 from .assembly import assemble_windows, default_environment
 from .clipboard_watcher import ClipboardWatcher
 from .command_language import CommandVocabulary, LocalizedEntrySocket
+from .custom_commands import CustomCommandStore
 from .cpp_whisper import CppTurboTranscriber
 from .language import LanguageController
 from .paths import discover
@@ -27,10 +28,9 @@ class VibeBarWindow:
         self.repository = repository
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
-        self.entry = LocalizedEntrySocket(
-            self.sockets.entry,
-            CommandVocabulary.load(repository / "windows" / "command_words.json"),
-        )
+        self.command_store = CustomCommandStore(repository / "windows" / "custom_commands.json")
+        self.command_words = CommandVocabulary.load(repository / "windows" / "command_words.json")
+        self._reload_entry()
         runner = WindowsBashRunner(discover(repository), environment)
         self.view_socket = LegacyMenuViewSocket(repository, runner)
         self.composition = get_composition("windows")
@@ -95,6 +95,44 @@ class VibeBarWindow:
         self._activity_tab(notebook, "todos")
         self._clipboard_tab(notebook)
         self._reports_tab(notebook)
+        self._commands_tab(notebook)
+
+    def _commands_tab(self, notebook: ttk.Notebook) -> None:
+        frame = ttk.Frame(notebook, padding=8)
+        notebook.add(frame, text=self.t("custom_commands"))
+        row = ttk.Frame(frame)
+        row.pack(fill="x", pady=(0, 8))
+        phrase = ttk.Entry(row, justify="right")
+        phrase.pack(side="right", fill="x", expand=True, padx=4)
+        kind = ttk.Combobox(row, state="readonly", values=("task", "idea", "todo", "pause"), width=12)
+        kind.set("task")
+        kind.pack(side="right", padx=4)
+        ttk.Button(row, text=self.t("add_command"), command=lambda: self._add_command(phrase, kind)).pack(side="right")
+        tree = ttk.Treeview(frame, columns=("phrase", "kind"), show="headings")
+        tree.heading("phrase", text=self.t("command_phrase"))
+        tree.heading("kind", text=self.t("command_kind"))
+        tree.pack(fill="both", expand=True)
+        for command in self.command_store.load():
+            tree.insert("", "end", values=(command.phrase, command.kind))
+        ttk.Button(frame, text=self.t("delete"), command=lambda: self._delete_command(tree)).pack(anchor="w", pady=6)
+
+    def _add_command(self, phrase: ttk.Entry, kind: ttk.Combobox) -> None:
+        self.command_store.add(phrase.get(), kind.get())
+        self._reload_entry()
+        self._build()
+        self.refresh()
+
+    def _delete_command(self, tree: ttk.Treeview) -> None:
+        selected = tree.selection()
+        if selected:
+            self.command_store.delete(str(tree.item(selected[0], "values")[0]))
+            self._reload_entry()
+            self._build()
+            self.refresh()
+
+    def _reload_entry(self) -> None:
+        words = self.command_words.merged(self.command_store.aliases())
+        self.entry = LocalizedEntrySocket(self.sockets.entry, words)
 
     def _activity_tab(self, notebook: ttk.Notebook, key: str) -> None:
         frame = ttk.Frame(notebook, padding=8)

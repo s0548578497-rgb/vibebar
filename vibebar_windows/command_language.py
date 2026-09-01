@@ -30,8 +30,14 @@ class CommandVocabulary:
             for alias in sorted(aliases, key=len, reverse=True):
                 if folded == alias or folded.startswith(alias + " "):
                     body = cleaned[len(alias):].lstrip(" ,.:;!?—-")
-                    return kind, body
+                    return kind, cleaned if kind == "task" else body
         return "task", cleaned
+
+    def merged(self, additions: dict[str, tuple[str, ...]]) -> "CommandVocabulary":
+        values = {kind: list(words) for kind, words in self.aliases.items()}
+        for kind, words in additions.items():
+            values.setdefault(kind, []).extend(word.casefold() for word in words)
+        return CommandVocabulary({kind: tuple(words) for kind, words in values.items()})
 
 
 @dataclass(frozen=True, slots=True)

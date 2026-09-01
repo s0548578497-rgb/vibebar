@@ -36,5 +36,9 @@
   "open": "Открыть",
   "quit": "Выход",
   "show_window": "Показать окно",
-  "hide_window": "Скрыть в трей"
+  "hide_window": "Скрыть в трей",
+  "custom_commands": "Свои команды",
+  "add_command": "Добавить",
+  "command_phrase": "Что сказать",
+  "command_kind": "Куда направить"
 }
