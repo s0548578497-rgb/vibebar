@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from vibebar_modular.contracts import EntrySocket
+from vibebar_modular.contracts import Clock, EntrySocket
 from vibebar_modular.clock import SystemClock
 from vibebar_modular.legacy import LegacyClipboardSocket, LegacyDigestSocket, LegacyEntrySocket, LegacyRecycleBin
 from vibebar_modular.nulls import NullRecycleBin
@@ -22,6 +22,7 @@ from .transcription import AudioTranscriber
 from .view_model import LegacyMenuViewSocket, MenuViewSocket
 from .hotkey import GlobalHotkey, WindowsGlobalHotkey
 from .voice import WakeWordSettings
+from .task_timer import JournalTaskTimerSocket, TaskTimerSocket
 from typing import Callable
 
 
@@ -42,6 +43,10 @@ def assemble_transcriber(repository: Path) -> AudioTranscriber:
 
 def assemble_wakeword(repository: Path) -> WakeWordSettings:
     return WakeWordSettings.load(repository / "windows" / "wakeword.json")
+
+
+def assemble_task_timer(journal: Path, clock: Clock) -> TaskTimerSocket:
+    return JournalTaskTimerSocket(journal, clock)
 
 
 def assemble_menu_view(repository: Path, environment: dict[str, str]) -> MenuViewSocket:

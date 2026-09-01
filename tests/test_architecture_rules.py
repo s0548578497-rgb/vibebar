@@ -56,6 +56,11 @@ class ArchitectureRulesTests(unittest.TestCase):
         self.assertNotIn("LegacyMenuViewSocket", source)
         self.assertNotIn("WindowsBashRunner", source)
 
+    def test_ui_does_not_poll_business_data(self) -> None:
+        source = (ROOT / "vibebar_windows" / "app.py").read_text(encoding="utf-8")
+        self.assertNotIn("after(3000", source)
+        self.assertNotIn("_refresh_tick", source)
+
     def _calls_named(self, name: str) -> list[str]:
         violations: list[str] = []
         for path in self.source_files():

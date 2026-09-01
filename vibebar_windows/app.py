@@ -15,6 +15,7 @@ from .assembly import (
     assemble_hotkey,
     assemble_menu_view,
     assemble_transcriber,
+    assemble_task_timer,
     assemble_wakeword,
     assemble_windows,
     default_environment,
@@ -32,6 +33,7 @@ class VibeBarWindow:
         self.repository = repository
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
+        self.task_timer = assemble_task_timer(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
         commands = assemble_commands(repository, self.sockets.entry)
         self.command_store = commands.repository
         self.entry = commands.entry
@@ -52,12 +54,14 @@ class VibeBarWindow:
         )
         self.hotkey = assemble_hotkey(self.voice.request_command, self.hotkey_error_from_thread)
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
+        self.timer_state = self.task_timer.load()
+        self.timer_job: str | None = None
         self._configure_window()
         self._build()
         self._start_tray()
         self.hotkey.start()
         self.refresh()
-        self._schedule_refresh()
+        self._start_timer()
 
     def t(self, key: str) -> str:
         return self.language.catalog.text(key)
@@ -202,7 +206,8 @@ class VibeBarWindow:
         except RuntimeError as error:
             self.status.set(str(error))
             return
-        self.current.set(view.current)
+        self.timer_state = self.task_timer.load()
+        self._update_timer_display()
         self._fill_activity("tasks", view.tasks)
         self._fill_activity("ideas", view.ideas)
         self._fill_activity("todos", view.todos)
@@ -316,12 +321,23 @@ class VibeBarWindow:
         message = self.t(success_key) if result.succeeded else (result.stderr.strip() or self.t("failed"))
         self.status.set(message)
 
-    def _schedule_refresh(self) -> None:
-        self.root.after(3000, self._refresh_tick)
+    def _start_timer(self) -> None:
+        if self.timer_job is None:
+            self.timer_job = self.root.after(1000, self._timer_tick)
 
-    def _refresh_tick(self) -> None:
-        self.refresh()
-        self._schedule_refresh()
+    def _timer_tick(self) -> None:
+        self.timer_job = None
+        self._update_timer_display()
+        if self.root.state() != "withdrawn":
+            self._start_timer()
+
+    def _update_timer_display(self) -> None:
+        self.current.set(self.timer_state.display(self.sockets.clock.now()))
+
+    def _stop_timer(self) -> None:
+        if self.timer_job is not None:
+            self.root.after_cancel(self.timer_job)
+            self.timer_job = None
 
     def _start_tray(self) -> None:
         try:
@@ -330,6 +346,7 @@ class VibeBarWindow:
             self.status.set("pystray/Pillow missing")
 
     def hide(self) -> None:
+        self._stop_timer()
         self.root.withdraw()
 
     def show_from_tray(self) -> None:
@@ -338,11 +355,14 @@ class VibeBarWindow:
     def show(self) -> None:
         self.root.deiconify()
         self.root.lift()
+        self.refresh()
+        self._start_timer()
 
     def quit_from_tray(self) -> None:
         self.root.after(0, self.quit)
 
     def quit(self) -> None:
+        self._stop_timer()
         self.watcher.stop()
         self.voice.close()
         self.hotkey.close()
