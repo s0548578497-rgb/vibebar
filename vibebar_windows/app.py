@@ -15,6 +15,7 @@ from .assembly import (
     assemble_hotkey,
     assemble_menu_view,
     assemble_transcriber,
+    assemble_wakeword,
     assemble_windows,
     default_environment,
     rebuild_command_entry,
@@ -47,6 +48,7 @@ class VibeBarWindow:
             self.voice_text_from_thread,
             self.voice_status_from_thread,
             assemble_transcriber(repository),
+            wakeword=assemble_wakeword(repository),
         )
         self.hotkey = assemble_hotkey(self.voice.request_command, self.hotkey_error_from_thread)
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)

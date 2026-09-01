@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 import threading
 from typing import Callable
@@ -13,6 +14,17 @@ import numpy as np
 from .transcription import AudioTranscriber
 
 
+class WakeWordSettings:
+    def __init__(self, model: str, threshold: float) -> None:
+        self.model = model
+        self.threshold = threshold
+
+    @classmethod
+    def load(cls, path: Path) -> "WakeWordSettings":
+        values = json.loads(path.read_text(encoding="utf-8"))
+        return cls(str(values["model"]), float(values["threshold"]))
+
+
 class VoiceController:
     def __init__(
         self,
@@ -20,12 +32,14 @@ class VoiceController:
         on_status: Callable[[str], None],
         transcriber: AudioTranscriber,
         model_dir: Path | None = None,
+        wakeword: WakeWordSettings | None = None,
     ) -> None:
         self.on_text = on_text
         self.on_status = on_status
         self.transcriber = transcriber
         local = Path(os.environ.get("LOCALAPPDATA", Path.home()))
         self.model_dir = model_dir or local / "VibeBar" / "models"
+        self.wakeword = wakeword or WakeWordSettings("hey_jarvis_v0.1.onnx", 0.5)
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.requested = False
@@ -72,7 +86,7 @@ class VoiceController:
             while not self.stop_event.is_set():
                 frame, _overflowed = stream.read(1_280)
                 score = float(next(iter(wake_model.predict(frame[:, 0]).values())))
-                if score >= 0.5 or self.command_event.is_set():
+                if score >= self.wakeword.threshold or self.command_event.is_set():
                     self.command_event.clear()
                     wake_model.reset()
                     self._handle_command(stream)
@@ -108,7 +122,7 @@ class VoiceController:
         from openwakeword.model import Model
 
         required = (
-            "hey_jarvis_v0.1.onnx",
+            self.wakeword.model,
             "melspectrogram.onnx",
             "embedding_model.onnx",
         )
@@ -116,7 +130,7 @@ class VoiceController:
         if missing:
             raise FileNotFoundError("Wake-word models are missing; run windows/setup.ps1")
         return Model(
-            wakeword_models=[str(self.model_dir / required[0])],
+            wakeword_models=[str(self.model_dir / self.wakeword.model)],
             inference_framework="onnx",
             melspec_model_path=str(self.model_dir / required[1]),
             embedding_model_path=str(self.model_dir / required[2]),

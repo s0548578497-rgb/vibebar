@@ -1,0 +1,4 @@
+{
+  "model": "hey_computer.onnx",
+  "threshold": 0.10
+}

@@ -21,6 +21,7 @@ from .cpp_whisper import CppTurboTranscriber
 from .transcription import AudioTranscriber
 from .view_model import LegacyMenuViewSocket, MenuViewSocket
 from .hotkey import GlobalHotkey, WindowsGlobalHotkey
+from .voice import WakeWordSettings
 from typing import Callable
 
 
@@ -37,6 +38,10 @@ def assemble_commands(repository: Path, inner: EntrySocket) -> CommandSocketSet:
 
 def assemble_transcriber(repository: Path) -> AudioTranscriber:
     return CppTurboTranscriber(repository)
+
+
+def assemble_wakeword(repository: Path) -> WakeWordSettings:
+    return WakeWordSettings.load(repository / "windows" / "wakeword.json")
 
 
 def assemble_menu_view(repository: Path, environment: dict[str, str]) -> MenuViewSocket:
