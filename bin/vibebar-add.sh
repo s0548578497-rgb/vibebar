@@ -28,7 +28,7 @@ IDEA  = {"идея", "идеи", "идею", "мысль", "мысли", "зам
 TODO  = {"незабыть", "напомнить", "напоминание", "важно", "запомнить", "todo"}
 PAUSE = {"перерыв", "пауза", "стоп", "конец", "финиш", "обед"}
 
-first = re.split(r"[\s,.;:!?]+", text, 1)[0].lower().strip('"\'«».,:;!?')
+first = re.split(r"[\s,.;:!?]+", text, maxsplit=1)[0].lower().strip('"\'«».,:;!?')
 rest  = text[len(text.split(" ", 1)[0]):].lstrip(" ,.:;—-").strip() if " " in text else ""
 
 low = text.lower()
