@@ -25,6 +25,7 @@ from .voice import WakeWordSettings
 from .task_timer import JournalTaskTimerSocket, TaskTimerSocket
 from .categories import CategoryService, JsonClassificationRepository, load_categories
 from .category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
+from .digests import WindowsDigestSocket
 from typing import Callable
 
 
@@ -91,14 +92,23 @@ def assemble_windows(
         configured.update(environment)
     runner = WindowsBashRunner(discover(repository), configured)
     recycle_bin = LegacyRecycleBin(repository, runner) if allow_deletion else NullRecycleBin()
+    legacy_digest = LegacyDigestSocket(repository, runner)
+    clock = SystemClock()
     return SocketSet(
         entry=LegacyEntrySocket(repository, runner),
         clipboard=LegacyClipboardSocket(repository, runner),
         recycle_bin=recycle_bin,
-        digest=LegacyDigestSocket(repository, runner),
+        digest=WindowsDigestSocket(
+            repository,
+            Path(configured["VIBEBAR_DIGEST_DIR"]),
+            Path(configured["VIBEBAR_FILE"]),
+            runner,
+            legacy_digest,
+            clock,
+        ),
         menu=WindowsMenuSocket(),
         opener=WindowsFileOpenerSocket(),
-        clock=SystemClock(),
+        clock=clock,
     )
 
 

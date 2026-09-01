@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, datetime
 from pathlib import Path
 import sys
 import tempfile
@@ -10,6 +11,10 @@ from vibebar_modular.compositions import Action, get_composition
 from vibebar_windows.paths import WindowsPaths
 from vibebar_windows.runner import WindowsBashRunner, _to_git_path
 from vibebar_windows.assembly import assemble_windows
+from vibebar_windows.digests import WindowsDigestSocket
+from vibebar_modular.clock import FixedClock
+from vibebar_modular.contracts import CommandResult
+from vibebar_modular.legacy import LegacyDigestSocket
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +56,48 @@ class WindowsRunnerTests(unittest.TestCase):
             result = sockets.entry.submit("adapter integration test")
             self.assertTrue(result.succeeded, result.stderr)
             self.assertIn("adapter integration test", journal.read_text(encoding="utf-8"))
+
+
+class WindowsDigestTests(unittest.TestCase):
+    def test_weekly_button_creates_local_report_without_obsidian(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            folder = Path(directory)
+            runner = RecordingDigestRunner("weekly report")
+            legacy = LegacyDigestSocket(ROOT, runner)
+            socket = WindowsDigestSocket(
+                ROOT,
+                folder / "digests",
+                folder / "journal.md",
+                runner,
+                legacy,
+                FixedClock(datetime(2030, 1, 2, 12, 0)),
+            )
+            result = socket.build_week()
+            report = folder / "digests" / "week-2030-01-02.md"
+            self.assertTrue(result.succeeded)
+            self.assertEqual(Path(result.stdout), report)
+            self.assertEqual(report.read_text(encoding="utf-8"), "weekly report")
+            self.assertTrue(runner.calls[0][0].endswith("vibebar-week.py"))
+
+    def test_publish_remains_a_separate_legacy_action(self) -> None:
+        runner = RecordingDigestRunner("")
+        legacy = LegacyDigestSocket(ROOT, runner)
+        socket = WindowsDigestSocket(
+            ROOT, ROOT / "digests", ROOT / "journal.md", runner, legacy,
+            FixedClock(datetime(2030, 1, 2, 12, 0)),
+        )
+        socket.publish_day(date(2030, 1, 1))
+        self.assertTrue(runner.calls[0][0].endswith("vibebar-push-vault.sh"))
+
+
+class RecordingDigestRunner:
+    def __init__(self, output: str) -> None:
+        self.output = output
+        self.calls: list[tuple[str, ...]] = []
+
+    def run(self, arguments: tuple[str, ...] | list[str]) -> CommandResult:
+        self.calls.append(tuple(arguments))
+        return CommandResult(0, self.output)
 
 
 if __name__ == "__main__":

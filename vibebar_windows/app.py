@@ -280,19 +280,22 @@ class VibeBarWindow:
         return int(selected[0])
 
     def daily_digest(self) -> None:
-        self._categorized_digest(self.sockets.digest.build_day(), 1, "daily_digest")
-
+        self._categorized_digest(self.sockets.digest.build_day(), 1, "daily_digest", open_report=True)
     def rebuild_digest(self) -> None:
-        self._categorized_digest(self.sockets.digest.build_day(rebuild=True), 1, "rebuild_digest")
-
+        self._categorized_digest(self.sockets.digest.build_day(rebuild=True), 1, "rebuild_digest", open_report=True)
     def weekly_digest(self) -> None:
         self._categorized_digest(self.sockets.digest.build_week(), 7, "weekly_digest")
-
-    def _categorized_digest(self, result: CommandResult, days: int, success_key: str) -> None:
+    def _categorized_digest(
+        self, result: CommandResult, days: int, success_key: str, open_report: bool = False
+    ) -> None:
         if result.succeeded and result.stdout.strip():
             report = Path(result.stdout.strip().splitlines()[-1])
             summary = self.categories.summary(days, self.language.catalog.code)
             self.category_reports.enrich(report, summary)
+            if open_report:
+                opened = self.sockets.opener.open(report)
+                if not opened.succeeded:
+                    result = opened
         self._result(result, success_key)
 
     def publish_digest(self) -> None:

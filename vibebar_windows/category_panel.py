@@ -15,6 +15,7 @@ class CategoryPanel:
         self.language = language
         self.tree: ttk.Treeview | None = None
         self.choice: ttk.Combobox | None = None
+        self.task_keys: dict[str, str] = {}
 
     def build(self, notebook: ttk.Notebook) -> None:
         frame = ttk.Frame(notebook, padding=8)
@@ -35,13 +36,17 @@ class CategoryPanel:
         if self.tree is None:
             return
         self.tree.delete(*self.tree.get_children())
+        self.task_keys.clear()
         labels = {item.number: item.label(self.language()) for item in self.service.catalog}
-        for task in self.service.tasks():
-            self.tree.insert("", "end", iid=task.key, values=(task.time, task.text, labels.get(task.category, "—")))
+        for index, task in enumerate(self.service.tasks()):
+            item_id = str(index)
+            self.task_keys[item_id] = task.key
+            self.tree.insert("", "end", iid=item_id, values=(task.time, task.text, labels.get(task.category, "—")))
 
     def assign(self) -> None:
         if self.tree is None or self.choice is None or not self.tree.selection() or not self.choice.get():
             return
         number = int(self.choice.get().split(" ", 1)[0])
-        self.service.assign(self.tree.selection()[0], number)
+        selected = self.tree.selection()[0]
+        self.service.assign(self.task_keys[selected], number)
         self.refresh()
