@@ -10,16 +10,18 @@ from typing import Callable
 from vibebar_modular.compositions import Action, get_composition
 from vibebar_modular.contracts import CommandResult
 
-from .assembly import assemble_windows, default_environment
+from .assembly import (
+    assemble_commands,
+    assemble_menu_view,
+    assemble_transcriber,
+    assemble_windows,
+    default_environment,
+    rebuild_command_entry,
+)
 from .clipboard_watcher import ClipboardWatcher
-from .command_language import CommandVocabulary, LocalizedEntrySocket
-from .custom_commands import CustomCommandStore
-from .cpp_whisper import CppTurboTranscriber
 from .language import LanguageController
-from .paths import discover
-from .runner import WindowsBashRunner
 from .tray import TrayController
-from .view_model import ActivityItem, LegacyMenuViewSocket, VibeBarView
+from .view_model import ActivityItem, VibeBarView
 from .voice import VoiceController
 
 
@@ -28,11 +30,10 @@ class VibeBarWindow:
         self.repository = repository
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
-        self.command_store = CustomCommandStore(repository / "windows" / "custom_commands.json")
-        self.command_words = CommandVocabulary.load(repository / "windows" / "command_words.json")
-        self._reload_entry()
-        runner = WindowsBashRunner(discover(repository), environment)
-        self.view_socket = LegacyMenuViewSocket(repository, runner)
+        commands = assemble_commands(repository, self.sockets.entry)
+        self.command_store = commands.repository
+        self.entry = commands.entry
+        self.view_socket = assemble_menu_view(repository, environment)
         self.composition = get_composition("windows")
         self.language = LanguageController(repository / "windows" / "locales", repository / "windows" / "settings.json")
         self.root = tk.Tk()
@@ -44,7 +45,7 @@ class VibeBarWindow:
         self.voice = VoiceController(
             self.voice_text_from_thread,
             self.voice_status_from_thread,
-            CppTurboTranscriber(repository),
+            assemble_transcriber(repository),
         )
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
         self._configure_window()
@@ -131,8 +132,7 @@ class VibeBarWindow:
             self.refresh()
 
     def _reload_entry(self) -> None:
-        words = self.command_words.merged(self.command_store.aliases())
-        self.entry = LocalizedEntrySocket(self.sockets.entry, words)
+        self.entry = rebuild_command_entry(self.repository, self.sockets.entry, self.command_store)
 
     def _activity_tab(self, notebook: ttk.Notebook, key: str) -> None:
         frame = ttk.Frame(notebook, padding=8)

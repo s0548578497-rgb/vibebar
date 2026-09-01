@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
+from typing import Protocol
 
 from vibebar_modular.contracts import CommandRunner
 
@@ -29,6 +30,10 @@ class VibeBarView:
     ideas: tuple[ActivityItem, ...]
     todos: tuple[ActivityItem, ...]
     clipboard: tuple[ClipboardItem, ...]
+
+
+class MenuViewSocket(Protocol):
+    def load(self) -> VibeBarView: ...
 
 
 @dataclass(frozen=True, slots=True)

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
+from vibebar_modular.contracts import EntrySocket
 from vibebar_modular.clock import SystemClock
 from vibebar_modular.legacy import LegacyClipboardSocket, LegacyDigestSocket, LegacyEntrySocket, LegacyRecycleBin
 from vibebar_modular.nulls import NullRecycleBin
@@ -13,6 +15,40 @@ from .menu import WindowsMenuSocket
 from .files import WindowsFileOpenerSocket
 from .paths import discover
 from .runner import WindowsBashRunner
+from .command_language import CommandVocabulary, LocalizedEntrySocket
+from .custom_commands import CustomCommandRepository, CustomCommandStore
+from .cpp_whisper import CppTurboTranscriber
+from .transcription import AudioTranscriber
+from .view_model import LegacyMenuViewSocket, MenuViewSocket
+
+
+@dataclass(frozen=True, slots=True)
+class CommandSocketSet:
+    entry: EntrySocket
+    repository: CustomCommandRepository
+
+
+def assemble_commands(repository: Path, inner: EntrySocket) -> CommandSocketSet:
+    store = CustomCommandStore(repository / "windows" / "custom_commands.json")
+    return CommandSocketSet(_localized_entry(repository, inner, store), store)
+
+
+def assemble_transcriber(repository: Path) -> AudioTranscriber:
+    return CppTurboTranscriber(repository)
+
+
+def assemble_menu_view(repository: Path, environment: dict[str, str]) -> MenuViewSocket:
+    runner = WindowsBashRunner(discover(repository), environment)
+    return LegacyMenuViewSocket(repository, runner)
+
+
+def rebuild_command_entry(repository: Path, inner: EntrySocket, store: CustomCommandRepository) -> EntrySocket:
+    return _localized_entry(repository, inner, store)
+
+
+def _localized_entry(repository: Path, inner: EntrySocket, store: CustomCommandRepository) -> EntrySocket:
+    base = CommandVocabulary.load(repository / "windows" / "command_words.json")
+    return LocalizedEntrySocket(inner, base.merged(store.aliases()))
 
 
 def assemble_windows(

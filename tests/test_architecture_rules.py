@@ -47,6 +47,15 @@ class ArchitectureRulesTests(unittest.TestCase):
                     violations.append(f"{path.name}:{node.lineno}")
         self.assertEqual(violations, [])
 
+    def test_ui_does_not_select_command_implementations(self) -> None:
+        source = (ROOT / "vibebar_windows" / "app.py").read_text(encoding="utf-8")
+        self.assertNotIn("CustomCommandStore", source)
+        self.assertNotIn("LocalizedEntrySocket", source)
+        self.assertNotIn("CommandVocabulary", source)
+        self.assertNotIn("CppTurboTranscriber", source)
+        self.assertNotIn("LegacyMenuViewSocket", source)
+        self.assertNotIn("WindowsBashRunner", source)
+
     def _calls_named(self, name: str) -> list[str]:
         violations: list[str] = []
         for path in self.source_files():
