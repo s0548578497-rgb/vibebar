@@ -16,3 +16,4 @@ __pycache__/
 .venv-windows/
 windows/settings.json
 windows/custom_commands.json
+windows/classifications.json

@@ -41,5 +41,11 @@
   "add_command": "Добавить",
   "command_phrase": "Что сказать",
   "command_kind": "Куда направить",
-  "hotkey_hint": "Запись: Ctrl+Alt+Space"
+  "hotkey_hint": "Запись: Ctrl+Alt+Space",
+  "categories": "Категории задач",
+  "category": "Категория",
+  "assign_category": "Назначить номер",
+  "time": "Время",
+  "daily_category_summary": "Итоги категорий за день",
+  "weekly_category_summary": "Итоги категорий за неделю"
 }

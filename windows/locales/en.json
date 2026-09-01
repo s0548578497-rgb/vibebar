@@ -41,5 +41,11 @@
   "add_command": "Add command",
   "command_phrase": "Spoken phrase",
   "command_kind": "Destination",
-  "hotkey_hint": "Record shortcut: Ctrl+Alt+Space"
+  "hotkey_hint": "Record shortcut: Ctrl+Alt+Space",
+  "categories": "Task categories",
+  "category": "Category",
+  "assign_category": "Assign number",
+  "time": "Time",
+  "daily_category_summary": "Daily category totals",
+  "weekly_category_summary": "Weekly category totals"
 }

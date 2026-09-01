@@ -41,5 +41,11 @@
   "add_command": "הוסף פקודה",
   "command_phrase": "מה אומרים",
   "command_kind": "לאן למיין",
-  "hotkey_hint": "קיצור הקלטה: Ctrl+Alt+Space"
+  "hotkey_hint": "קיצור הקלטה: Ctrl+Alt+Space",
+  "categories": "סיווג משימות",
+  "category": "קטגוריה",
+  "assign_category": "שייך מספר",
+  "time": "שעה",
+  "daily_category_summary": "סיכום קטגוריות יומי",
+  "weekly_category_summary": "סיכום קטגוריות שבועי"
 }

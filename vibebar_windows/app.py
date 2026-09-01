@@ -12,6 +12,7 @@ from vibebar_modular.contracts import CommandResult
 
 from .assembly import (
     assemble_commands,
+    assemble_categories,
     assemble_hotkey,
     assemble_menu_view,
     assemble_transcriber,
@@ -22,6 +23,7 @@ from .assembly import (
     rebuild_command_entry,
 )
 from .clipboard_watcher import ClipboardWatcher
+from .category_panel import CategoryPanel
 from .language import LanguageController
 from .tray import TrayController
 from .view_model import ActivityItem, VibeBarView
@@ -34,6 +36,9 @@ class VibeBarWindow:
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
         self.task_timer = assemble_task_timer(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        category_sockets = assemble_categories(repository, Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        self.categories = category_sockets.service
+        self.category_reports = category_sockets.reports
         commands = assemble_commands(repository, self.sockets.entry)
         self.command_store = commands.repository
         self.entry = commands.entry
@@ -56,6 +61,7 @@ class VibeBarWindow:
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
         self.timer_state = self.task_timer.load()
         self.timer_job: str | None = None
+        self.category_panel = CategoryPanel(self.categories, self.t, lambda: self.language.catalog.code)
         self._configure_window()
         self._build()
         self._start_tray()
@@ -105,6 +111,7 @@ class VibeBarWindow:
         self._activity_tab(notebook, "todos")
         self._clipboard_tab(notebook)
         self._reports_tab(notebook)
+        self.category_panel.build(notebook)
         self._commands_tab(notebook)
 
     def _commands_tab(self, notebook: ttk.Notebook) -> None:
@@ -212,6 +219,7 @@ class VibeBarWindow:
         self._fill_activity("ideas", view.ideas)
         self._fill_activity("todos", view.todos)
         self._fill_clipboard(view)
+        self.category_panel.refresh()
 
     def _fill_activity(self, key: str, items: tuple[ActivityItem, ...]) -> None:
         tree = self.trees[key]
@@ -272,13 +280,20 @@ class VibeBarWindow:
         return int(selected[0])
 
     def daily_digest(self) -> None:
-        self._result(self.sockets.digest.build_day(), "daily_digest")
+        self._categorized_digest(self.sockets.digest.build_day(), 1, "daily_digest")
 
     def rebuild_digest(self) -> None:
-        self._result(self.sockets.digest.build_day(rebuild=True), "rebuild_digest")
+        self._categorized_digest(self.sockets.digest.build_day(rebuild=True), 1, "rebuild_digest")
 
     def weekly_digest(self) -> None:
-        self._result(self.sockets.digest.build_week(), "weekly_digest")
+        self._categorized_digest(self.sockets.digest.build_week(), 7, "weekly_digest")
+
+    def _categorized_digest(self, result: CommandResult, days: int, success_key: str) -> None:
+        if result.succeeded and result.stdout.strip():
+            report = Path(result.stdout.strip().splitlines()[-1])
+            summary = self.categories.summary(days, self.language.catalog.code)
+            self.category_reports.enrich(report, summary)
+        self._result(result, success_key)
 
     def publish_digest(self) -> None:
         self._result(self.sockets.digest.publish_day(), "publish_digest")

@@ -23,6 +23,8 @@ from .view_model import LegacyMenuViewSocket, MenuViewSocket
 from .hotkey import GlobalHotkey, WindowsGlobalHotkey
 from .voice import WakeWordSettings
 from .task_timer import JournalTaskTimerSocket, TaskTimerSocket
+from .categories import CategoryService, JsonClassificationRepository, load_categories
+from .category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
 from typing import Callable
 
 
@@ -30,6 +32,12 @@ from typing import Callable
 class CommandSocketSet:
     entry: EntrySocket
     repository: CustomCommandRepository
+
+
+@dataclass(frozen=True, slots=True)
+class CategorySocketSet:
+    service: CategoryService
+    reports: CategoryReportWriter
 
 
 def assemble_commands(repository: Path, inner: EntrySocket) -> CommandSocketSet:
@@ -47,6 +55,12 @@ def assemble_wakeword(repository: Path) -> WakeWordSettings:
 
 def assemble_task_timer(journal: Path, clock: Clock) -> TaskTimerSocket:
     return JournalTaskTimerSocket(journal, clock)
+
+
+def assemble_categories(repository: Path, journal: Path, clock: Clock) -> CategorySocketSet:
+    catalog = load_categories(repository / "windows" / "categories.json")
+    store = JsonClassificationRepository(repository / "windows" / "classifications.json")
+    return CategorySocketSet(CategoryService(journal, catalog, store, clock), MarkdownCategoryReportWriter())
 
 
 def assemble_menu_view(repository: Path, environment: dict[str, str]) -> MenuViewSocket:
