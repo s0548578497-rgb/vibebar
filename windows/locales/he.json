@@ -40,5 +40,6 @@
   "custom_commands": "פקודות אישיות",
   "add_command": "הוסף פקודה",
   "command_phrase": "מה אומרים",
-  "command_kind": "לאן למיין"
+  "command_kind": "לאן למיין",
+  "hotkey_hint": "קיצור הקלטה: Ctrl+Alt+Space"
 }

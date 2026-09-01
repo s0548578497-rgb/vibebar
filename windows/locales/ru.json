@@ -40,5 +40,6 @@
   "custom_commands": "Свои команды",
   "add_command": "Добавить",
   "command_phrase": "Что сказать",
-  "command_kind": "Куда направить"
+  "command_kind": "Куда направить",
+  "hotkey_hint": "Запись: Ctrl+Alt+Space"
 }

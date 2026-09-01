@@ -12,6 +12,7 @@ from vibebar_modular.contracts import CommandResult
 
 from .assembly import (
     assemble_commands,
+    assemble_hotkey,
     assemble_menu_view,
     assemble_transcriber,
     assemble_windows,
@@ -47,10 +48,12 @@ class VibeBarWindow:
             self.voice_status_from_thread,
             assemble_transcriber(repository),
         )
+        self.hotkey = assemble_hotkey(self.voice.request_command, self.hotkey_error_from_thread)
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
         self._configure_window()
         self._build()
         self._start_tray()
+        self.hotkey.start()
         self.refresh()
         self._schedule_refresh()
 
@@ -175,6 +178,7 @@ class VibeBarWindow:
         footer = ttk.Frame(parent)
         footer.pack(fill="x", pady=(10, 0))
         ttk.Label(footer, textvariable=self.status).pack(side="left")
+        ttk.Label(footer, text=self.t("hotkey_hint")).pack(side="left", padx=8)
         ttk.Button(footer, text=self.t("hide_window"), command=self.hide).pack(side="right", padx=3)
         ttk.Button(footer, text=self.t("language"), command=self.switch_language).pack(side="right", padx=3)
         watcher_key = "watcher_on" if self.watcher.enabled else "watcher_off"
@@ -303,6 +307,9 @@ class VibeBarWindow:
     def voice_status_from_thread(self, key: str) -> None:
         self.root.after(0, lambda: self.status.set(self.t(key)))
 
+    def hotkey_error_from_thread(self, message: str) -> None:
+        self.root.after(0, lambda: self.status.set(message))
+
     def _result(self, result: CommandResult, success_key: str) -> None:
         message = self.t(success_key) if result.succeeded else (result.stderr.strip() or self.t("failed"))
         self.status.set(message)
@@ -336,6 +343,7 @@ class VibeBarWindow:
     def quit(self) -> None:
         self.watcher.stop()
         self.voice.close()
+        self.hotkey.close()
         self.tray.stop()
         self.root.destroy()
 

@@ -29,6 +29,8 @@ class VoiceController:
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.requested = False
+        self.command_event = threading.Event()
+        self.command_lock = threading.Lock()
 
     @property
     def enabled(self) -> bool:
@@ -70,15 +72,37 @@ class VoiceController:
             while not self.stop_event.is_set():
                 frame, _overflowed = stream.read(1_280)
                 score = float(next(iter(wake_model.predict(frame[:, 0]).values())))
-                if score >= 0.5:
+                if score >= 0.5 or self.command_event.is_set():
+                    self.command_event.clear()
                     wake_model.reset()
-                    winsound.Beep(880, 120)
-                    self.on_status("voice_command")
-                    audio = self._capture_command(stream)
-                    text = self.transcriber.transcribe(audio)
-                    if text:
-                        self.on_text(text)
+                    self._handle_command(stream)
                     self.on_status("voice_listening")
+
+    def request_command(self) -> None:
+        if self.enabled:
+            self.command_event.set()
+            return
+        threading.Thread(target=self._one_shot, name="vibebar-command", daemon=True).start()
+
+    def _one_shot(self) -> None:
+        if not self.command_lock.acquire(blocking=False):
+            return
+        try:
+            import sounddevice as sd
+            with sd.InputStream(samplerate=16_000, channels=1, dtype="int16", blocksize=1_280) as stream:
+                self._handle_command(stream, ignore_stop=True)
+        except (ImportError, OSError, RuntimeError, ValueError) as error:
+            self.on_status(str(error))
+        finally:
+            self.command_lock.release()
+
+    def _handle_command(self, stream: object, ignore_stop: bool = False) -> None:
+        winsound.Beep(880, 120)
+        self.on_status("voice_command")
+        audio = self._capture_command(stream, ignore_stop)
+        text = self.transcriber.transcribe(audio)
+        if text:
+            self.on_text(text)
 
     def _wake_model(self) -> object:
         from openwakeword.model import Model
@@ -98,11 +122,11 @@ class VoiceController:
             embedding_model_path=str(self.model_dir / required[2]),
         )
 
-    def _capture_command(self, stream: object) -> np.ndarray:
+    def _capture_command(self, stream: object, ignore_stop: bool = False) -> np.ndarray:
         frames: list[np.ndarray] = []
         silent_blocks = 0
         for block_index in range(250):
-            if self.stop_event.is_set():
+            if self.stop_event.is_set() and not ignore_stop:
                 break
             frame, _overflowed = stream.read(1_280)
             mono = np.asarray(frame[:, 0], dtype=np.int16)

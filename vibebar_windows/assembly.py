@@ -20,6 +20,8 @@ from .custom_commands import CustomCommandRepository, CustomCommandStore
 from .cpp_whisper import CppTurboTranscriber
 from .transcription import AudioTranscriber
 from .view_model import LegacyMenuViewSocket, MenuViewSocket
+from .hotkey import GlobalHotkey, WindowsGlobalHotkey
+from typing import Callable
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +42,10 @@ def assemble_transcriber(repository: Path) -> AudioTranscriber:
 def assemble_menu_view(repository: Path, environment: dict[str, str]) -> MenuViewSocket:
     runner = WindowsBashRunner(discover(repository), environment)
     return LegacyMenuViewSocket(repository, runner)
+
+
+def assemble_hotkey(callback: Callable[[], None], on_error: Callable[[str], None]) -> GlobalHotkey:
+    return WindowsGlobalHotkey(callback, on_error)
 
 
 def rebuild_command_entry(repository: Path, inner: EntrySocket, store: CustomCommandRepository) -> EntrySocket:

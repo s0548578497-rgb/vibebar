@@ -40,5 +40,6 @@
   "custom_commands": "Custom commands",
   "add_command": "Add command",
   "command_phrase": "Spoken phrase",
-  "command_kind": "Destination"
+  "command_kind": "Destination",
+  "hotkey_hint": "Record shortcut: Ctrl+Alt+Space"
 }
