@@ -12,6 +12,7 @@ from vibebar_modular.contracts import CommandResult
 
 from .assembly import assemble_windows, default_environment
 from .clipboard_watcher import ClipboardWatcher
+from .command_language import CommandVocabulary, LocalizedEntrySocket
 from .cpp_whisper import CppTurboTranscriber
 from .language import LanguageController
 from .paths import discover
@@ -26,6 +27,10 @@ class VibeBarWindow:
         self.repository = repository
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
+        self.entry = LocalizedEntrySocket(
+            self.sockets.entry,
+            CommandVocabulary.load(repository / "windows" / "command_words.json"),
+        )
         runner = WindowsBashRunner(discover(repository), environment)
         self.view_socket = LegacyMenuViewSocket(repository, runner)
         self.composition = get_composition("windows")
@@ -177,7 +182,7 @@ class VibeBarWindow:
     def submit(self) -> None:
         text = self.text.get().strip()
         if text:
-            result = self.sockets.entry.submit(text)
+            result = self.entry.submit(text)
             self._result(result, "saved")
             if result.succeeded:
                 self.text.set("")
@@ -253,7 +258,7 @@ class VibeBarWindow:
         self.root.after(0, lambda: self._submit_voice(text))
 
     def _submit_voice(self, text: str) -> None:
-        result = self.sockets.entry.submit(text)
+        result = self.entry.submit(text)
         self._result(result, "saved")
         self.refresh()
 
