@@ -56,6 +56,7 @@ class WindowsBashRunner:
             text=True,
             encoding="utf-8",
             env=environment,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
         return CommandResult(completed.returncode, completed.stdout, completed.stderr)
 

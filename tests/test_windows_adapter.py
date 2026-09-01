@@ -41,6 +41,7 @@ class WindowsRunnerTests(unittest.TestCase):
         environment = run.call_args.kwargs["env"]
         self.assertEqual(environment["PYTHONUTF8"], "1")
         self.assertIn("windows\\bin", environment["PATH"])
+        self.assertNotEqual(run.call_args.kwargs["creationflags"], 0)
 
     @unittest.skipUnless(sys.platform == "win32", "Windows integration test")
     def test_original_entry_script_runs_end_to_end(self) -> None:
