@@ -155,7 +155,7 @@ class VibeBarWindow:
         frame = ttk.Frame(notebook, padding=8)
         notebook.add(frame, text=self.t(key))
         tree = ttk.Treeview(frame, columns=("time", "text"), show="headings")
-        tree.heading("time", text="⏱")
+        tree.heading("time", text=self.t("break_start") if key == "breaks" else "⏱")
         tree.heading("text", text=self.t(key))
         tree.column("time", width=80, anchor="center", stretch=False)
         tree.column("text", width=500, anchor="e")
