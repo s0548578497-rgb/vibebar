@@ -49,4 +49,6 @@ class CombinedMenuViewSocket:
 
     def load(self) -> VibeBarView:
         view = self.inner.load()
-        return VibeBarView(view.current, view.tasks, view.ideas, view.todos, view.clipboard, self.breaks.load())
+        breaks = self.breaks.load()
+        timeline = tuple(sorted((*view.tasks, *breaks), key=lambda item: item.time, reverse=True))
+        return VibeBarView(view.current, timeline, view.ideas, view.todos, view.clipboard, breaks)

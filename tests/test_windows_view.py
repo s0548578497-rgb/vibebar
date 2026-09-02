@@ -6,7 +6,8 @@ import tempfile
 import unittest
 
 from vibebar_windows.language import LanguageController
-from vibebar_windows.view_model import parse_swiftbar_output
+from vibebar_windows.break_view import CombinedMenuViewSocket
+from vibebar_windows.view_model import ActivityItem, VibeBarView, parse_swiftbar_output
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +39,29 @@ actions
         self.assertEqual(view.ideas[0].text, "useful idea")
         self.assertEqual(view.todos[0].text, "call later")
         self.assertEqual(view.clipboard[0].source_index, 7)
+
+    def test_breaks_are_also_visible_in_main_timeline(self) -> None:
+        inner = StaticView(VibeBarView("current", (ActivityItem("16:05", "work"),), (), (), ()))
+        breaks = StaticBreaks((ActivityItem("15:47", "⏸ break"),))
+        view = CombinedMenuViewSocket(inner, breaks).load()
+        self.assertEqual([item.time for item in view.tasks], ["16:05", "15:47"])
+        self.assertEqual(view.breaks[0].time, "15:47")
+
+
+class StaticView:
+    def __init__(self, view: VibeBarView) -> None:
+        self.view = view
+
+    def load(self) -> VibeBarView:
+        return self.view
+
+
+class StaticBreaks:
+    def __init__(self, items: tuple[ActivityItem, ...]) -> None:
+        self.items = items
+
+    def load(self) -> tuple[ActivityItem, ...]:
+        return self.items
 
 
 class LanguageTests(unittest.TestCase):
