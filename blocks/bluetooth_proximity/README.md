@@ -27,3 +27,6 @@ python -m bluetooth_proximity.cli
 `WindowsClassicRssiSource` משתמש כברירת־מחדל במצב היחסי שמתאים למתאם MediaTek:
 קרוב מתקבל כ־`0`, והיחלשות מעבר לטווח התקין מתקבלת כמספר שלילי. אפשר להעביר
 `absolute=True` עבור מתאם שתומך ב־RSSI מוחלט אמין.
+
+הכיול המקומי למתאם MediaTek נשמר ב־`profiles/mediatek_relative.json`: מעבר ל־`FAR`
+ב־‎−10 וחזרה ל־`NEAR` ב־‎−5, לאחר ארבעה אישורים רצופים.

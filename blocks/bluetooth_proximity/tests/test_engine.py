@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+import tempfile
 
 from bluetooth_proximity.calibration import calibrate
 from bluetooth_proximity.contracts import NullSignalSource
 from bluetooth_proximity.engine import ProximityEngine
 from bluetooth_proximity.models import ProximityConfig, ProximityState, SignalSample
 from bluetooth_proximity.monitor import ProximityMonitor
+from bluetooth_proximity.config_store import JsonConfigStore, NullConfigStore
 
 
 class EngineTests(unittest.TestCase):
@@ -47,6 +50,14 @@ class EngineTests(unittest.TestCase):
         self.assertGreater(config.near_threshold, config.far_threshold)
         self.assertGreater(config.near_threshold, -85)
         self.assertLess(config.near_threshold, -50)
+
+    def test_config_store_is_replaceable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = JsonConfigStore(Path(directory) / "profile.json")
+            expected = ProximityConfig(near_threshold=-5, far_threshold=-10)
+            store.save(expected)
+            self.assertEqual(store.load(), expected)
+        self.assertEqual(NullConfigStore().load(), ProximityConfig())
 
 
 if __name__ == "__main__":
