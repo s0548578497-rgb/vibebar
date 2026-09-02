@@ -17,6 +17,10 @@ class ProximityEngine:
         self.missing_count = 0
 
     def update(self, sample: SignalSample) -> ProximityState:
+        if sample.connected is False:
+            self.state = ProximityState.DISCONNECTED
+            self._reset_candidate()
+            return self.state
         if sample.rssi is None:
             return self._missing()
         self.missing_count = 0
@@ -26,6 +30,8 @@ class ProximityEngine:
         return self.state
 
     def _missing(self) -> ProximityState:
+        if self.state is ProximityState.DISCONNECTED:
+            return self.state
         self.missing_count += 1
         if self.missing_count >= self.config.missing_limit:
             self.state = ProximityState.UNKNOWN
@@ -40,7 +46,7 @@ class ProximityEngine:
         return self.state
 
     def _confirm(self, proposed: ProximityState) -> None:
-        if proposed in (self.state, ProximityState.UNKNOWN):
+        if proposed in (self.state, ProximityState.UNKNOWN, ProximityState.DISCONNECTED):
             self._reset_candidate()
             return
         if proposed != self.candidate:

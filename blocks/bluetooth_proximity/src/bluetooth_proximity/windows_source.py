@@ -46,7 +46,7 @@ class WindowsClassicRssiSource:
         for line in self.process.stdout:
             value = line.strip()
             if value == "missing":
-                self.values.put(SignalSample(None))
+                self.values.put(SignalSample(None, connected=False))
             else:
                 try:
                     self.values.put(SignalSample(int(value)))

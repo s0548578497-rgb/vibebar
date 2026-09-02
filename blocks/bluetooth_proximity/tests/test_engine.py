@@ -39,6 +39,10 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(self.feed(None, None), ProximityState.NEAR)
         self.assertEqual(self.feed(None), ProximityState.UNKNOWN)
 
+    def test_explicit_disconnect_is_not_a_sensor_failure(self) -> None:
+        self.assertEqual(self.engine.update(SignalSample(None, connected=False)), ProximityState.DISCONNECTED)
+        self.assertEqual(self.engine.update(SignalSample(None)), ProximityState.DISCONNECTED)
+
     def test_null_source_is_safe(self) -> None:
         changes: list[ProximityState] = []
         monitor = ProximityMonitor(NullSignalSource(), self.engine, changes.append)

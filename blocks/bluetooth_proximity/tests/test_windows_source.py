@@ -36,7 +36,9 @@ class WindowsSourceTests(unittest.TestCase):
         self.assertEqual(popen.call_args.args[0][-1], "relative")
         time.sleep(0.01)
         self.assertEqual(source.read().rssi, -51)
-        self.assertIsNone(source.read().rssi)
+        disconnected = source.read()
+        self.assertIsNone(disconnected.rssi)
+        self.assertFalse(disconnected.connected)
         source.close()
         self.assertTrue(process.stopped)
 

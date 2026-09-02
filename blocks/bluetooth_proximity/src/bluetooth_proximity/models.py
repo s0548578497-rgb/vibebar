@@ -8,11 +8,13 @@ class ProximityState(str, Enum):
     UNKNOWN = "UNKNOWN"
     NEAR = "NEAR"
     FAR = "FAR"
+    DISCONNECTED = "DISCONNECTED"
 
 
 @dataclass(frozen=True, slots=True)
 class SignalSample:
     rssi: int | None
+    connected: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
