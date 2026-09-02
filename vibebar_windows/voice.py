@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import json
+from dataclasses import dataclass
 from pathlib import Path
 import threading
 from typing import Callable
@@ -12,6 +13,15 @@ import numpy as np
 
 from .transcription import AudioTranscriber
 from .audio_cue import AudioCue, NullAudioCue
+from .diagnostics import DiagnosticLog, NullDiagnosticLog, text_fingerprint
+
+
+@dataclass(frozen=True, slots=True)
+class CaptureSettings:
+    speech_level: float = 120.0
+    start_timeout_blocks: int = 100
+    trailing_silence_blocks: int = 20
+    maximum_blocks: int = 375
 
 
 class WakeWordSettings:
@@ -34,6 +44,8 @@ class VoiceController:
         model_dir: Path | None = None,
         wakeword: WakeWordSettings | None = None,
         cue: AudioCue | None = None,
+        diagnostics: DiagnosticLog | None = None,
+        capture: CaptureSettings | None = None,
     ) -> None:
         self.on_text = on_text
         self.on_status = on_status
@@ -42,6 +54,8 @@ class VoiceController:
         self.model_dir = model_dir or local / "VibeBar" / "models"
         self.wakeword = wakeword or WakeWordSettings("hey_jarvis_v0.1.onnx", 0.5)
         self.cue = cue or NullAudioCue()
+        self.diagnostics = diagnostics or NullDiagnosticLog()
+        self.capture = capture or CaptureSettings()
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.requested = False
@@ -64,17 +78,20 @@ class VoiceController:
             return
         self.stop_event.clear()
         self.requested = True
+        self.diagnostics.event("voice_start")
         self.thread = threading.Thread(target=self._run, name="vibebar-voice", daemon=True)
         self.thread.start()
 
     def stop(self) -> None:
         self.requested = False
         self.stop_event.set()
+        self.diagnostics.event("voice_stop")
 
     def _run(self) -> None:
         try:
             self._listen_loop()
         except (ImportError, OSError, RuntimeError, ValueError) as error:
+            self.diagnostics.event("voice_failure", error=type(error).__name__)
             self.on_status(str(error))
         finally:
             self.requested = False
@@ -84,17 +101,20 @@ class VoiceController:
         import sounddevice as sd
         wake_model = self._wake_model()
         self.on_status("voice_listening")
+        self.diagnostics.event("listener_ready")
         with sd.InputStream(samplerate=16_000, channels=1, dtype="int16", blocksize=1_280) as stream:
             while not self.stop_event.is_set():
                 frame, _overflowed = stream.read(1_280)
                 score = float(next(iter(wake_model.predict(frame[:, 0]).values())))
                 if score >= self.wakeword.threshold or self.command_event.is_set():
+                    self.diagnostics.event("command_triggered", score=round(score, 4))
                     self.command_event.clear()
                     wake_model.reset()
                     self._handle_command(stream)
                     self.on_status("voice_listening")
 
     def request_command(self) -> None:
+        self.diagnostics.event("command_requested", listener=self.enabled)
         if self.enabled:
             self.command_event.set()
             return
@@ -108,15 +128,24 @@ class VoiceController:
             with sd.InputStream(samplerate=16_000, channels=1, dtype="int16", blocksize=1_280) as stream:
                 self._handle_command(stream, ignore_stop=True)
         except (ImportError, OSError, RuntimeError, ValueError) as error:
+            self.diagnostics.event("command_failure", error=type(error).__name__)
             self.on_status(str(error))
         finally:
             self.command_lock.release()
 
     def _handle_command(self, stream: object, ignore_stop: bool = False) -> None:
+        self.diagnostics.event("cue_started")
         self.cue.play()
+        self.diagnostics.event("cue_completed")
         self.on_status("voice_command")
+        self.diagnostics.event("capture_started")
         audio = self._capture_command(stream, ignore_stop)
+        self.diagnostics.event("capture_completed", samples=int(audio.size))
+        self.diagnostics.event("transcription_started")
         text = self.transcriber.transcribe(audio)
+        self.diagnostics.event(
+            "transcription_completed", characters=len(text), fingerprint=text_fingerprint(text)
+        )
         if text:
             self.on_text(text)
 
@@ -141,16 +170,32 @@ class VoiceController:
     def _capture_command(self, stream: object, ignore_stop: bool = False) -> np.ndarray:
         frames: list[np.ndarray] = []
         silent_blocks = 0
-        for block_index in range(250):
+        speech_seen = False
+        maximum_level = 0.0
+        reason = "maximum_duration"
+        for block_index in range(self.capture.maximum_blocks):
             if self.stop_event.is_set() and not ignore_stop:
+                reason = "listener_stopped"
                 break
             frame, _overflowed = stream.read(1_280)
             mono = np.asarray(frame[:, 0], dtype=np.int16)
             frames.append(mono)
             level = float(np.sqrt(np.mean(mono.astype(np.float32) ** 2)))
-            silent_blocks = silent_blocks + 1 if level < 300 else 0
-            if block_index >= 8 and silent_blocks >= 15:
+            maximum_level = max(maximum_level, level)
+            if level >= self.capture.speech_level:
+                speech_seen = True
+                silent_blocks = 0
+            elif speech_seen:
+                silent_blocks += 1
+            if speech_seen and silent_blocks >= self.capture.trailing_silence_blocks:
+                reason = "silence_after_speech"
                 break
+            if not speech_seen and block_index + 1 >= self.capture.start_timeout_blocks:
+                reason = "no_speech"
+                break
+        self.diagnostics.event(
+            "capture_stopped", reason=reason, speech_seen=speech_seen, maximum_level=round(maximum_level, 1)
+        )
         return np.concatenate(frames) if frames else np.array([], dtype=np.int16)
 
     def close(self) -> None:

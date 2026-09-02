@@ -1,0 +1,69 @@
+from __future__ import annotations
+
+from datetime import datetime
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import numpy as np
+
+from vibebar_modular.clock import FixedClock
+from vibebar_windows.diagnostics import JsonLineDiagnosticLog, text_fingerprint
+from vibebar_windows.transcription import NullAudioTranscriber
+from vibebar_windows.voice import CaptureSettings, VoiceController
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class FakeStream:
+    def __init__(self, levels: list[int]) -> None:
+        self.levels = levels
+        self.reads = 0
+
+    def read(self, _size: int) -> tuple[np.ndarray, bool]:
+        level = self.levels[min(self.reads, len(self.levels) - 1)]
+        self.reads += 1
+        return np.full((1_280, 1), level, dtype=np.int16), False
+
+
+class RecordingDiagnostics:
+    def __init__(self) -> None:
+        self.events: list[tuple[str, dict[str, object]]] = []
+
+    def event(self, name: str, **fields: object) -> None:
+        self.events.append((name, fields))
+
+
+class CapturePolicyTests(unittest.TestCase):
+    def test_silence_does_not_stop_capture_before_speech(self) -> None:
+        trace = RecordingDiagnostics()
+        stream = FakeStream([0, 0, 0, 0, 180, 180, 0, 0])
+        controller = VoiceController(
+            lambda _text: None,
+            lambda _status: None,
+            NullAudioTranscriber(),
+            diagnostics=trace,
+            capture=CaptureSettings(start_timeout_blocks=8, trailing_silence_blocks=2, maximum_blocks=20),
+        )
+        audio = controller._capture_command(stream, ignore_stop=True)
+        self.assertEqual(stream.reads, 8)
+        self.assertEqual(audio.size, 8 * 1_280)
+        self.assertEqual(trace.events[-1][1]["reason"], "silence_after_speech")
+
+
+class DiagnosticLogTests(unittest.TestCase):
+    def test_json_log_contains_metadata_without_spoken_text(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            path = Path(directory) / "diagnostics.jsonl"
+            log = JsonLineDiagnosticLog(path, FixedClock(datetime(2030, 1, 2, 3, 4, 5)))
+            spoken = "private spoken words"
+            log.event("transcription_completed", characters=len(spoken), fingerprint=text_fingerprint(spoken))
+            record = json.loads(path.read_text(encoding="utf-8"))
+            self.assertNotIn(spoken, path.read_text(encoding="utf-8"))
+            self.assertEqual(record["characters"], len(spoken))
+
+
+if __name__ == "__main__":
+    unittest.main()

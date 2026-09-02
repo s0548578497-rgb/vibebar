@@ -27,6 +27,7 @@ from .categories import CategoryService, JsonClassificationRepository, load_cate
 from .category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
 from .digests import WindowsDigestSocket
 from .audio_cue import AudioCue, WindowsWaveCue
+from .diagnostics import DiagnosticLog, JsonLineDiagnosticLog
 from typing import Callable
 
 
@@ -57,6 +58,10 @@ def assemble_wakeword(repository: Path) -> WakeWordSettings:
 
 def assemble_audio_cue() -> AudioCue:
     return WindowsWaveCue()
+
+
+def assemble_diagnostics(repository: Path, clock: Clock) -> DiagnosticLog:
+    return JsonLineDiagnosticLog(repository / "windows" / "diagnostics.jsonl", clock)
 
 
 def assemble_task_timer(journal: Path, clock: Clock) -> TaskTimerSocket:

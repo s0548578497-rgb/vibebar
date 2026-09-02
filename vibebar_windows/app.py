@@ -19,6 +19,7 @@ from .assembly import (
     assemble_task_timer,
     assemble_wakeword,
     assemble_audio_cue,
+    assemble_diagnostics,
     assemble_windows,
     default_environment,
     rebuild_command_entry,
@@ -29,6 +30,7 @@ from .language import LanguageController
 from .tray import TrayController
 from .view_model import ActivityItem, VibeBarView
 from .voice import VoiceController
+from .diagnostics import text_fingerprint
 
 
 class VibeBarWindow:
@@ -37,6 +39,7 @@ class VibeBarWindow:
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
         self.task_timer = assemble_task_timer(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        self.diagnostics = assemble_diagnostics(repository, self.sockets.clock)
         category_sockets = assemble_categories(repository, Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
         self.categories = category_sockets.service
         self.category_reports = category_sockets.reports
@@ -58,6 +61,7 @@ class VibeBarWindow:
             assemble_transcriber(repository),
             wakeword=assemble_wakeword(repository),
             cue=assemble_audio_cue(),
+            diagnostics=self.diagnostics,
         )
         self.hotkey = assemble_hotkey(self.voice.request_command, self.hotkey_error_from_thread)
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
@@ -70,15 +74,14 @@ class VibeBarWindow:
         self.hotkey.start()
         self.refresh()
         self._start_timer()
+        self.diagnostics.event("app_ready")
 
     def t(self, key: str) -> str:
         return self.language.catalog.text(key)
-
     def _configure_window(self) -> None:
         self.root.geometry("760x620")
         self.root.minsize(650, 500)
         self.root.protocol("WM_DELETE_WINDOW", self.hide)
-
     def _build(self) -> None:
         self.root.title(self.t("app_title"))
         self.status.set(self.t("ready"))
@@ -90,12 +93,10 @@ class VibeBarWindow:
         self._build_input(outer)
         self._build_tabs(outer)
         self._build_footer(outer)
-
     def _build_header(self, parent: ttk.Frame) -> None:
         header = ttk.LabelFrame(parent, text=self.t("current"), padding=10)
         header.pack(fill="x", pady=(0, 10))
         ttk.Label(header, textvariable=self.current, font=("Segoe UI", 15, "bold"), anchor="e").pack(fill="x")
-
     def _build_input(self, parent: ttk.Frame) -> None:
         row = ttk.Frame(parent)
         row.pack(fill="x", pady=(0, 10))
@@ -104,7 +105,6 @@ class VibeBarWindow:
         entry.bind("<Return>", self._submit_event)
         self._button(row, Action.ADD_ENTRY, self.t("submit"), self.submit)
         entry.focus_set()
-
     def _build_tabs(self, parent: ttk.Frame) -> None:
         notebook = ttk.Notebook(parent)
         notebook.pack(fill="both", expand=True)
@@ -115,7 +115,6 @@ class VibeBarWindow:
         self._reports_tab(notebook)
         self.category_panel.build(notebook)
         self._commands_tab(notebook)
-
     def _commands_tab(self, notebook: ttk.Notebook) -> None:
         frame = ttk.Frame(notebook, padding=8)
         notebook.add(frame, text=self.t("custom_commands"))
@@ -134,7 +133,6 @@ class VibeBarWindow:
         for command in self.command_store.load():
             tree.insert("", "end", values=(command.phrase, command.kind))
         ttk.Button(frame, text=self.t("delete"), command=lambda: self._delete_command(tree)).pack(anchor="w", pady=6)
-
     def _add_command(self, phrase: ttk.Entry, kind: ttk.Combobox) -> None:
         self.command_store.add(phrase.get(), kind.get())
         self._reload_entry()
@@ -325,7 +323,9 @@ class VibeBarWindow:
         self.root.after(0, lambda: self._submit_voice(text))
 
     def _submit_voice(self, text: str) -> None:
+        self.diagnostics.event("voice_text_received", characters=len(text), fingerprint=text_fingerprint(text))
         result = self.entry.submit(text)
+        self.diagnostics.event("journal_submit_completed", exit_code=result.exit_code)
         self._result(result, "saved")
         self.refresh()
 
