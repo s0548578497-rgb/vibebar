@@ -30,6 +30,7 @@ class VibeBarView:
     ideas: tuple[ActivityItem, ...]
     todos: tuple[ActivityItem, ...]
     clipboard: tuple[ClipboardItem, ...]
+    breaks: tuple[ActivityItem, ...] = ()
 
 
 class MenuViewSocket(Protocol):
@@ -81,7 +82,8 @@ def _activity_items(lines: list[str]) -> tuple[ActivityItem, ...]:
         label = line.split("|", 1)[0].strip()
         match = re.match(r"^(\d{1,2}:\d{2})\s+(.*)$", label)
         if match:
-            items.append(ActivityItem(match.group(1), match.group(2).strip()))
+            text = re.sub(r"\s*<!--.*?-->\s*$", "", match.group(2)).strip()
+            items.append(ActivityItem(match.group(1), text))
     return tuple(items)
 
 

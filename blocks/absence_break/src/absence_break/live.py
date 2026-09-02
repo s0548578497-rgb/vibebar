@@ -14,17 +14,20 @@ from .coordinator import AbsenceCoordinator
 from .engine import AbsenceEngine
 from .journal_writer import MarkdownJournalBreakWriter
 from .models import BreakEvent, PresenceStatus
+from .notifications import ChangeNotifier, WindowsNamedEventNotifier
 from .state_store import JsonStateStore
 
 
 class LoggedBreakWriter:
-    def __init__(self, inner: MarkdownJournalBreakWriter, log: Path) -> None:
+    def __init__(self, inner: MarkdownJournalBreakWriter, log: Path, notifier: ChangeNotifier) -> None:
         self.inner = inner
         self.log = log
+        self.notifier = notifier
 
     def write(self, event: BreakEvent) -> None:
         self.inner.write(event)
         _log(self.log, event.kind.value, event.occurred_at.isoformat())
+        self.notifier.notify()
 
 
 def main() -> None:
@@ -33,7 +36,11 @@ def main() -> None:
     runtime = repository / "blocks" / "absence_break" / "runtime"
     store = JsonStateStore(runtime / "state.json")
     absence = AbsenceEngine(state=store.load())
-    writer = LoggedBreakWriter(MarkdownJournalBreakWriter(Path.home() / "vibebar-journal.md"), runtime / "events.jsonl")
+    writer = LoggedBreakWriter(
+        MarkdownJournalBreakWriter(Path.home() / "vibebar-journal.md"),
+        runtime / "events.jsonl",
+        WindowsNamedEventNotifier(),
+    )
     coordinator = AbsenceCoordinator(absence, writer, store)
     engine = ProximityEngine(JsonConfigStore(proximity / "profiles" / "mediatek_relative.json").load())
     source = WindowsClassicRssiSource(proximity / "native" / "ClassicRssiReader.exe", "JBL TUNE125BT")

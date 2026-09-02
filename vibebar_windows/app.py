@@ -31,6 +31,7 @@ from .tray import TrayController
 from .view_model import ActivityItem, VibeBarView
 from .voice import VoiceController
 from .diagnostics import text_fingerprint
+from .journal_events import WindowsJournalChangeListener
 
 
 class VibeBarWindow:
@@ -46,10 +47,11 @@ class VibeBarWindow:
         commands = assemble_commands(repository, self.sockets.entry)
         self.command_store = commands.repository
         self.entry = commands.entry
-        self.view_socket = assemble_menu_view(repository, environment)
+        self.view_socket = assemble_menu_view(repository, environment, self.sockets.clock)
         self.composition = get_composition("windows")
         self.language = LanguageController(repository / "windows" / "locales", repository / "windows" / "settings.json")
         self.root = tk.Tk()
+        self.journal_listener = WindowsJournalChangeListener(lambda: self.root.after(0, self.refresh))
         self.text = tk.StringVar()
         self.current = tk.StringVar(value="—")
         self.status = tk.StringVar()
@@ -74,6 +76,7 @@ class VibeBarWindow:
         self.hotkey.start()
         self.refresh()
         self._start_timer()
+        self.journal_listener.start()
         self.diagnostics.event("app_ready")
 
     def t(self, key: str) -> str:
@@ -111,6 +114,7 @@ class VibeBarWindow:
         self._activity_tab(notebook, "tasks")
         self._activity_tab(notebook, "ideas")
         self._activity_tab(notebook, "todos")
+        self._activity_tab(notebook, "breaks")
         self._clipboard_tab(notebook)
         self._reports_tab(notebook)
         self.category_panel.build(notebook)
@@ -138,7 +142,6 @@ class VibeBarWindow:
         self._reload_entry()
         self._build()
         self.refresh()
-
     def _delete_command(self, tree: ttk.Treeview) -> None:
         selected = tree.selection()
         if selected:
@@ -146,10 +149,8 @@ class VibeBarWindow:
             self._reload_entry()
             self._build()
             self.refresh()
-
     def _reload_entry(self) -> None:
         self.entry = rebuild_command_entry(self.repository, self.sockets.entry, self.command_store)
-
     def _activity_tab(self, notebook: ttk.Notebook, key: str) -> None:
         frame = ttk.Frame(notebook, padding=8)
         notebook.add(frame, text=self.t(key))
@@ -160,7 +161,6 @@ class VibeBarWindow:
         tree.column("text", width=500, anchor="e")
         tree.pack(fill="both", expand=True)
         self.trees[key] = tree
-
     def _clipboard_tab(self, notebook: ttk.Notebook) -> None:
         frame = ttk.Frame(notebook, padding=8)
         notebook.add(frame, text=self.t("clipboard"))
@@ -177,7 +177,6 @@ class VibeBarWindow:
         self._button(buttons, Action.COPY_CLIPBOARD, self.t("copy"), self.copy_clipboard)
         self._button(buttons, Action.DELETE_CLIPBOARD, self.t("delete"), self.delete_clipboard)
         self._button(buttons, Action.CLEAR_CLIPBOARD, self.t("clear"), self.clear_clipboard)
-
     def _reports_tab(self, notebook: ttk.Notebook) -> None:
         frame = ttk.Frame(notebook, padding=18)
         notebook.add(frame, text=self.t("reports"))
@@ -186,7 +185,6 @@ class VibeBarWindow:
         self._wide_button(frame, Action.WEEKLY_DIGEST, self.t("weekly_digest"), self.weekly_digest)
         self._wide_button(frame, Action.PUBLISH_DIGEST, self.t("publish_digest"), self.publish_digest)
         self._wide_button(frame, Action.OPEN_JOURNAL, self.t("edit_journal"), self.open_journal)
-
     def _build_footer(self, parent: ttk.Frame) -> None:
         footer = ttk.Frame(parent)
         footer.pack(fill="x", pady=(10, 0))
@@ -218,6 +216,7 @@ class VibeBarWindow:
         self._fill_activity("tasks", view.tasks)
         self._fill_activity("ideas", view.ideas)
         self._fill_activity("todos", view.todos)
+        self._fill_activity("breaks", view.breaks)
         self._fill_clipboard(view)
         self.category_panel.refresh()
 
@@ -385,6 +384,7 @@ class VibeBarWindow:
         self.voice.close()
         self.hotkey.close()
         self.tray.stop()
+        self.journal_listener.close()
         self.root.destroy()
 
     def run(self) -> None:

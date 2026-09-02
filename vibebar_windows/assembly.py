@@ -28,6 +28,7 @@ from .category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
 from .digests import WindowsDigestSocket
 from .audio_cue import AudioCue, WindowsWaveCue
 from .diagnostics import DiagnosticLog, JsonLineDiagnosticLog
+from .break_view import CombinedMenuViewSocket, JournalBreakViewSocket
 from typing import Callable
 
 
@@ -74,9 +75,11 @@ def assemble_categories(repository: Path, journal: Path, clock: Clock) -> Catego
     return CategorySocketSet(CategoryService(journal, catalog, store, clock), MarkdownCategoryReportWriter())
 
 
-def assemble_menu_view(repository: Path, environment: dict[str, str]) -> MenuViewSocket:
+def assemble_menu_view(repository: Path, environment: dict[str, str], clock: Clock) -> MenuViewSocket:
     runner = WindowsBashRunner(discover(repository), environment)
-    return LegacyMenuViewSocket(repository, runner)
+    legacy = LegacyMenuViewSocket(repository, runner)
+    breaks = JournalBreakViewSocket(Path(environment["VIBEBAR_FILE"]), clock)
+    return CombinedMenuViewSocket(legacy, breaks)
 
 
 def assemble_hotkey(callback: Callable[[], None], on_error: Callable[[str], None]) -> GlobalHotkey:
