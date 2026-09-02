@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import io
 import math
+import os
+from pathlib import Path
 import struct
 from typing import Protocol
 import wave
@@ -11,22 +13,42 @@ import winsound
 
 
 class AudioCue(Protocol):
-    def play(self) -> None: ...
+    def play(self) -> bool: ...
 
 
 class NullAudioCue:
-    def play(self) -> None:
-        return None
+    def play(self) -> bool:
+        return False
 
 
 class WindowsWaveCue:
     """Play a short WAV through the normal Windows waveform audio path."""
 
-    def __init__(self, frequency: int = 880, duration_ms: int = 160, volume: float = 0.65) -> None:
-        self.content = _tone(frequency, duration_ms, volume)
+    def __init__(
+        self, path: Path | None = None, frequency: int = 880, duration_ms: int = 160, volume: float = 0.65
+    ) -> None:
+        local = Path(os.environ.get("LOCALAPPDATA", Path.home()))
+        self.path = path or local / "VibeBar" / "command-cue.wav"
+        self.available = self._prepare(_tone(frequency, duration_ms, volume))
 
-    def play(self) -> None:
-        winsound.PlaySound(self.content, winsound.SND_MEMORY | winsound.SND_SYNC)
+    def play(self) -> bool:
+        if not self.available:
+            return False
+        try:
+            winsound.PlaySound(
+                str(self.path), winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT
+            )
+        except RuntimeError:
+            return False
+        return True
+
+    def _prepare(self, content: bytes) -> bool:
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_bytes(content)
+        except OSError:
+            return False
+        return True
 
 
 def _tone(frequency: int, duration_ms: int, volume: float) -> bytes:

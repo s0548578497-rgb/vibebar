@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import io
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import wave
+import winsound
 
 import numpy as np
 
@@ -41,13 +42,22 @@ class AudioBoundaryTests(unittest.TestCase):
         transcriber.close()
 
     def test_wave_cue_is_a_valid_local_wav(self) -> None:
-        cue = WindowsWaveCue()
-        with wave.open(io.BytesIO(cue.content), "rb") as sound:
-            self.assertEqual(sound.getframerate(), 16_000)
-            self.assertEqual(sound.getnchannels(), 1)
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            cue = WindowsWaveCue(Path(directory) / "cue.wav")
+            with wave.open(str(cue.path), "rb") as sound:
+                self.assertEqual(sound.getframerate(), 16_000)
+                self.assertEqual(sound.getnchannels(), 1)
 
     def test_null_audio_cue_is_sealed(self) -> None:
-        self.assertIsNone(NullAudioCue().play())
+        self.assertFalse(NullAudioCue().play())
+
+    @patch("vibebar_windows.audio_cue.winsound.PlaySound")
+    def test_wave_cue_is_queued_asynchronously(self, play: object) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            cue = WindowsWaveCue(Path(directory) / "cue.wav")
+            self.assertTrue(cue.play())
+            flags = play.call_args.args[1]
+            self.assertTrue(flags & winsound.SND_ASYNC)
 
 
 if __name__ == "__main__":

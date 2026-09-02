@@ -135,8 +135,8 @@ class VoiceController:
 
     def _handle_command(self, stream: object, ignore_stop: bool = False) -> None:
         self.diagnostics.event("cue_started")
-        self.cue.play()
-        self.diagnostics.event("cue_completed")
+        played = self.cue.play()
+        self.diagnostics.event("cue_completed", queued=played)
         self.on_status("voice_command")
         self.diagnostics.event("capture_started")
         audio = self._capture_command(stream, ignore_stop)
