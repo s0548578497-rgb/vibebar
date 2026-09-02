@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ import numpy as np
 
 from vibebar_windows.cpp_whisper import TurboPaths, _save_wav
 from vibebar_windows.transcription import NullAudioTranscriber
+from vibebar_windows.audio_cue import NullAudioCue, WindowsWaveCue
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +39,15 @@ class AudioBoundaryTests(unittest.TestCase):
         transcriber = NullAudioTranscriber()
         self.assertEqual(transcriber.transcribe(np.ones(10, dtype=np.int16)), "")
         transcriber.close()
+
+    def test_wave_cue_is_a_valid_local_wav(self) -> None:
+        cue = WindowsWaveCue()
+        with wave.open(io.BytesIO(cue.content), "rb") as sound:
+            self.assertEqual(sound.getframerate(), 16_000)
+            self.assertEqual(sound.getnchannels(), 1)
+
+    def test_null_audio_cue_is_sealed(self) -> None:
+        self.assertIsNone(NullAudioCue().play())
 
 
 if __name__ == "__main__":

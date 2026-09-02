@@ -7,11 +7,11 @@ import json
 from pathlib import Path
 import threading
 from typing import Callable
-import winsound
 
 import numpy as np
 
 from .transcription import AudioTranscriber
+from .audio_cue import AudioCue, NullAudioCue
 
 
 class WakeWordSettings:
@@ -33,6 +33,7 @@ class VoiceController:
         transcriber: AudioTranscriber,
         model_dir: Path | None = None,
         wakeword: WakeWordSettings | None = None,
+        cue: AudioCue | None = None,
     ) -> None:
         self.on_text = on_text
         self.on_status = on_status
@@ -40,6 +41,7 @@ class VoiceController:
         local = Path(os.environ.get("LOCALAPPDATA", Path.home()))
         self.model_dir = model_dir or local / "VibeBar" / "models"
         self.wakeword = wakeword or WakeWordSettings("hey_jarvis_v0.1.onnx", 0.5)
+        self.cue = cue or NullAudioCue()
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.requested = False
@@ -111,7 +113,7 @@ class VoiceController:
             self.command_lock.release()
 
     def _handle_command(self, stream: object, ignore_stop: bool = False) -> None:
-        winsound.Beep(880, 120)
+        self.cue.play()
         self.on_status("voice_command")
         audio = self._capture_command(stream, ignore_stop)
         text = self.transcriber.transcribe(audio)

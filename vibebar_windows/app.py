@@ -18,6 +18,7 @@ from .assembly import (
     assemble_transcriber,
     assemble_task_timer,
     assemble_wakeword,
+    assemble_audio_cue,
     assemble_windows,
     default_environment,
     rebuild_command_entry,
@@ -56,6 +57,7 @@ class VibeBarWindow:
             self.voice_status_from_thread,
             assemble_transcriber(repository),
             wakeword=assemble_wakeword(repository),
+            cue=assemble_audio_cue(),
         )
         self.hotkey = assemble_hotkey(self.voice.request_command, self.hotkey_error_from_thread)
         self.tray = TrayController(self.show_from_tray, self.quit_from_tray)
@@ -300,7 +302,6 @@ class VibeBarWindow:
 
     def publish_digest(self) -> None:
         self._result(self.sockets.digest.publish_day(), "publish_digest")
-
     def open_journal(self) -> None:
         path = Path(default_environment(self.repository)["VIBEBAR_FILE"])
         self._result(self.sockets.opener.open(path), "edit_journal")
@@ -309,7 +310,6 @@ class VibeBarWindow:
         self.watcher.toggle()
         self._build()
         self.refresh()
-
     def switch_language(self) -> None:
         self.language.switch()
         self._build()

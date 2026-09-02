@@ -26,6 +26,7 @@ from .task_timer import JournalTaskTimerSocket, TaskTimerSocket
 from .categories import CategoryService, JsonClassificationRepository, load_categories
 from .category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
 from .digests import WindowsDigestSocket
+from .audio_cue import AudioCue, WindowsWaveCue
 from typing import Callable
 
 
@@ -52,6 +53,10 @@ def assemble_transcriber(repository: Path) -> AudioTranscriber:
 
 def assemble_wakeword(repository: Path) -> WakeWordSettings:
     return WakeWordSettings.load(repository / "windows" / "wakeword.json")
+
+
+def assemble_audio_cue() -> AudioCue:
+    return WindowsWaveCue()
 
 
 def assemble_task_timer(journal: Path, clock: Clock) -> TaskTimerSocket:
