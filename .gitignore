@@ -18,3 +18,5 @@ windows/settings.json
 windows/custom_commands.json
 windows/classifications.json
 windows/diagnostics.jsonl
+blocks/bluetooth_proximity/.venv-proximity/
+blocks/bluetooth_proximity/native/ClassicRssiReader.exe
