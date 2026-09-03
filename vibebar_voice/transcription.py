@@ -1,3 +1,5 @@
+"""Replaceable audio-transcription boundary and its sealed fallback."""
+
 from __future__ import annotations
 
 from typing import Protocol

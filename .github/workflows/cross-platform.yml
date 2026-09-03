@@ -5,22 +5,52 @@ on:
   pull_request:
 
 jobs:
-  core-and-macos:
+  windows-product:
+    name: Windows product and shared engines
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install application and test dependencies
+        run: python -m pip install -r windows/requirements.txt pytest
+      - name: Run the complete Windows suite
+        env:
+          PYTHONPATH: ${{ github.workspace }};${{ github.workspace }}\blocks\absence_break\src;${{ github.workspace }}\blocks\bluetooth_proximity\src
+        run: python -m pytest -q
+
+  macos-adapters:
+    name: macOS scripts, native helper and adapters
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Verify shell scripts
         run: bash -n bin/*.sh macos/*.sh install.sh uninstall.sh
       - name: Verify launch agents
         run: for file in macos/launchd/*.plist.template; do plutil -lint "$file"; done
       - name: Compile native Bluetooth RSSI helper
         run: macos/native/build.sh
-      - name: Install test dependency
-        run: python -m pip install "numpy>=1.26,<3"
-      - name: Test platform-neutral and macOS adapters
+      - name: Install adapter test dependencies
+        run: python -m pip install "numpy>=1.26,<3" pytest
+      - name: Run shared engines and macOS adapters
         env:
-          PYTHONPATH: ${{ github.workspace }}/blocks/bluetooth_proximity/src
-        run: python -m unittest tests.test_modularity tests.test_macos_adapter tests.test_architecture_rules blocks.bluetooth_proximity.tests.test_macos_source
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/blocks/absence_break/src:${{ github.workspace }}/blocks/bluetooth_proximity/src
+        run: >-
+          python -m pytest -q
+          tests/test_modularity.py
+          tests/test_macos_adapter.py
+          tests/test_architecture_rules.py
+          tests/test_command_language.py
+          tests/test_task_timer.py
+          tests/test_achievements.py
+          blocks/absence_break/tests
+          blocks/bluetooth_proximity/tests/test_engine.py
+          blocks/bluetooth_proximity/tests/test_devices.py
+          blocks/bluetooth_proximity/tests/test_resilience.py
+          blocks/bluetooth_proximity/tests/test_macos_source.py

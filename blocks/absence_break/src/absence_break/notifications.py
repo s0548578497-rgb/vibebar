@@ -1,3 +1,5 @@
+"""Optional notification boundary for journal-change events."""
+
 from __future__ import annotations
 
 import ctypes

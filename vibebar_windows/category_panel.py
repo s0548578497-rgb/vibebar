@@ -5,7 +5,7 @@ from __future__ import annotations
 from tkinter import ttk
 from typing import Callable
 
-from .categories import CategoryService
+from vibebar_modular.categories import CategoryService
 
 
 class CategoryPanel:

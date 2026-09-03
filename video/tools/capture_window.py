@@ -1,3 +1,5 @@
+"""Capture one named window without exposing the rest of the desktop."""
+
 from __future__ import annotations
 
 import ctypes

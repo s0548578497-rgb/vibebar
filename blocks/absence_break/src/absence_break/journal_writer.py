@@ -1,3 +1,5 @@
+"""Idempotently insert proximity events into the Markdown journal."""
+
 from __future__ import annotations
 
 from datetime import datetime

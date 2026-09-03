@@ -1,4 +1,4 @@
-"""Local Hey Jarvis wake word followed by local Whisper transcription."""
+"""Local Hey Computer wake word followed by local Whisper transcription."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ class VoiceController:
         self.transcriber = transcriber
         local = Path(os.environ.get("LOCALAPPDATA", Path.home()))
         self.model_dir = model_dir or local / "VibeBar" / "models"
-        self.wakeword = wakeword or WakeWordSettings("hey_jarvis_v0.1.onnx", 0.5)
+        self.wakeword = wakeword or WakeWordSettings("hey_computer.onnx", 0.10)
         self.cue = cue or NullAudioCue()
         self.diagnostics = diagnostics or NullDiagnosticLog()
         self.capture = capture or CaptureSettings()
@@ -66,6 +66,7 @@ class VoiceController:
         )
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
+        self.command_thread: threading.Thread | None = None
         self.requested = False
         self.command_event = threading.Event()
         self.command_lock = threading.Lock()
@@ -126,7 +127,8 @@ class VoiceController:
         if self.enabled:
             self.command_event.set()
             return
-        threading.Thread(target=self._one_shot, name="vibebar-command", daemon=True).start()
+        self.command_thread = threading.Thread(target=self._one_shot, name="vibebar-command", daemon=True)
+        self.command_thread.start()
 
     def _one_shot(self) -> None:
         if not self.command_lock.acquire(blocking=False):
@@ -140,6 +142,7 @@ class VoiceController:
             self.on_status(str(error))
         finally:
             self.command_lock.release()
+            self.command_thread = None
 
     def _handle_command(self, stream: object, ignore_stop: bool = False) -> None:
         boundary = self.boundary_factory()
@@ -213,4 +216,11 @@ class VoiceController:
 
     def close(self) -> None:
         self.stop()
+        workers = (self.thread, self.command_thread)
+        for worker in workers:
+            if worker is not None and worker is not threading.current_thread():
+                worker.join(timeout=10)
+        if any(worker is not None and worker.is_alive() for worker in workers):
+            self.diagnostics.event("voice_close_deferred", reason="worker_active")
+            return
         self.transcriber.close()

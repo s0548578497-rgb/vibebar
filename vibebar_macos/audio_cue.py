@@ -1,3 +1,5 @@
+"""macOS implementation of the non-blocking recording cue."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

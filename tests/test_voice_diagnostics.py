@@ -9,9 +9,9 @@ import unittest
 import numpy as np
 
 from vibebar_modular.clock import FixedClock
-from vibebar_windows.diagnostics import JsonLineDiagnosticLog, text_fingerprint
-from vibebar_windows.transcription import NullAudioTranscriber
-from vibebar_windows.voice import CaptureSettings, VoiceController
+from vibebar_voice.diagnostics import JsonLineDiagnosticLog, text_fingerprint
+from vibebar_voice.transcription import NullAudioTranscriber
+from vibebar_voice.controller import CaptureSettings, VoiceController
 from vibebar_voice.speech_boundary import AdaptiveBoundarySettings, AdaptiveSpeechBoundary
 
 
@@ -37,7 +37,42 @@ class RecordingDiagnostics:
         self.events.append((name, fields))
 
 
+class RecordingTranscriber(NullAudioTranscriber):
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class FakeWorker:
+    def __init__(self, alive_after_join: bool) -> None:
+        self.alive_after_join = alive_after_join
+        self.joined = False
+
+    def join(self, timeout: float) -> None:
+        self.joined = True
+
+    def is_alive(self) -> bool:
+        return self.alive_after_join
+
+
 class CapturePolicyTests(unittest.TestCase):
+    def test_default_wakeword_is_consistently_hey_computer(self) -> None:
+        controller = VoiceController(lambda _text: None, lambda _status: None, NullAudioTranscriber())
+        self.assertEqual(controller.wakeword.model, "hey_computer.onnx")
+
+    def test_close_does_not_destroy_transcriber_while_worker_is_active(self) -> None:
+        transcriber = RecordingTranscriber()
+        diagnostics = RecordingDiagnostics()
+        controller = VoiceController(lambda _text: None, lambda _status: None, transcriber, diagnostics=diagnostics)
+        worker = FakeWorker(alive_after_join=True)
+        controller.thread = worker  # type: ignore[assignment]
+        controller.close()
+        self.assertTrue(worker.joined)
+        self.assertFalse(transcriber.closed)
+        self.assertEqual(diagnostics.events[-1][0], "voice_close_deferred")
+
     def test_silence_does_not_stop_capture_before_speech(self) -> None:
         trace = RecordingDiagnostics()
         stream = FakeStream([0, 0, 0, 0, 180, 180, 0, 0])

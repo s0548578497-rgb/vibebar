@@ -3,7 +3,7 @@ import tempfile
 import unittest
 
 from vibebar_modular.contracts import CommandResult
-from vibebar_windows.command_language import CommandVocabulary, LocalizedEntrySocket
+from vibebar_modular.command_language import CommandVocabulary, LocalizedEntrySocket
 from vibebar_windows.custom_commands import CustomCommandStore, NullCustomCommandStore
 
 

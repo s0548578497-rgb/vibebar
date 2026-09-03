@@ -1,3 +1,5 @@
+"""Polling loop that connects a signal source to the pure decision engine."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

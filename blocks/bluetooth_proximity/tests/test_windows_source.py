@@ -28,7 +28,7 @@ class FakeProcess:
 
 
 class WindowsSourceTests(unittest.TestCase):
-    @patch("bluetooth_proximity.windows_source.subprocess.Popen")
+    @patch("bluetooth_proximity.process_source.subprocess.Popen")
     def test_reader_output_becomes_typed_samples(self, popen: object) -> None:
         process = FakeProcess()
         popen.return_value = process
@@ -42,7 +42,7 @@ class WindowsSourceTests(unittest.TestCase):
         source.close()
         self.assertTrue(process.stopped)
 
-    @patch("bluetooth_proximity.windows_source.subprocess.Popen")
+    @patch("bluetooth_proximity.process_source.subprocess.Popen")
     def test_silent_exited_reader_is_an_explicit_disconnect(self, popen: object) -> None:
         process = FakeProcess()
         process.stdout = iter(())

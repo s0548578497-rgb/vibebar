@@ -1,3 +1,5 @@
+"""Clock boundary used to make absence timing deterministic in tests."""
+
 from __future__ import annotations
 
 from datetime import datetime

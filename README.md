@@ -20,6 +20,17 @@ The original work and its four core tools are credited below. This fork's
 extensions are documented separately so that original and added work remain
 clear.
 
+### Verification status
+
+| Area | Automated CI | Physical acceptance |
+|---|---|---|
+| Windows application and shared engines | Full pytest suite on `windows-latest` | Tested on the development Windows PC |
+| macOS scripts and adapters | Shell, plist, Swift helper and adapter tests on `macos-latest` | Microphone, Accessibility and Bluetooth still require a real Mac |
+
+The CI jobs are deliberately named after their actual scope. A passing macOS
+adapter job does not claim that physical microphone or Bluetooth behaviour was
+tested.
+
 ---
 
 **English** · A macOS menu-bar app. Say what you're doing — it logs itself. Four tools in one menu:

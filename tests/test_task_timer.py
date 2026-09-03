@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from vibebar_windows.task_timer import JournalTaskTimerSocket, NullTaskTimerSocket
+from vibebar_modular.task_timer import JournalTaskTimerSocket, NullTaskTimerSocket
 
 
 class FixedClock:

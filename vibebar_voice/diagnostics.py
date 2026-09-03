@@ -1,3 +1,5 @@
+"""Privacy-preserving voice diagnostics that never store spoken text."""
+
 from __future__ import annotations
 
 import hashlib

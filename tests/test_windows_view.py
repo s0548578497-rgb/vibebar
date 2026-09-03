@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from vibebar_windows.language import LanguageController
+from vibebar_modular.language import LanguageController
 from vibebar_windows.break_view import CombinedMenuViewSocket
 from vibebar_windows.view_model import ActivityItem, VibeBarView, parse_swiftbar_output
 

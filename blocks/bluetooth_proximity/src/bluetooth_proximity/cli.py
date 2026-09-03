@@ -1,3 +1,5 @@
+"""Small interactive harness for testing proximity decisions by hand."""
+
 from __future__ import annotations
 
 import sys

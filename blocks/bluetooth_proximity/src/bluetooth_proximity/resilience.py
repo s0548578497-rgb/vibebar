@@ -1,3 +1,5 @@
+"""Restart failed or silent native readers with bounded backoff."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -66,6 +68,8 @@ class RestartingSignalSource:
     def read(self) -> SignalSample:
         if self.source is None:
             if self.monotonic() < self.retry_at:
+                # During backoff, report no source rather than fabricate an
+                # RSSI value that could be mistaken for physical distance.
                 return SignalSample(None, connected=False)
             self.source = self.factory()
             self.health.report("SOURCE_STARTED")

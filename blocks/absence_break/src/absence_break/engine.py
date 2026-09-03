@@ -1,3 +1,5 @@
+"""Apply the grace period that turns sustained absence into a break."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -6,6 +8,7 @@ from .models import AbsenceConfig, AbsenceState, BreakEvent, BreakEventKind, Pre
 
 
 class AbsenceEngine:
+    """Delay break creation while retaining the original departure time."""
     def __init__(self, config: AbsenceConfig | None = None, state: AbsenceState | None = None) -> None:
         self.config = config or AbsenceConfig()
         self.state = state or AbsenceState()
@@ -21,6 +24,8 @@ class AbsenceEngine:
             return ()
         if self.state.confirmed or now - self.state.pending_since < self.config.grace:
             return ()
+        # Confirmation happens now, but accounting must begin at departure;
+        # otherwise every qualifying break would silently lose five minutes.
         started = self.state.pending_since
         self.state = AbsenceState(started, self.state.cause, True)
         return (BreakEvent(BreakEventKind.STARTED, started, now),)

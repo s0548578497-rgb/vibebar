@@ -1,3 +1,5 @@
+"""Derive conservative near/far thresholds from captured RSSI samples."""
+
 from __future__ import annotations
 
 from statistics import median

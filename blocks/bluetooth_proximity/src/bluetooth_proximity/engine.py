@@ -1,3 +1,5 @@
+"""Convert noisy RSSI samples into stable proximity states."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -7,6 +9,7 @@ from .models import ProximityConfig, ProximityState, SignalSample
 
 
 class ProximityEngine:
+    """Filter jitter with a median window, hysteresis and confirmation counts."""
     def __init__(self, config: ProximityConfig | None = None) -> None:
         self.config = config or ProximityConfig()
         self.config.validate()
@@ -39,6 +42,8 @@ class ProximityEngine:
         return self.state
 
     def _propose(self, filtered: int) -> ProximityState:
+        # Separate thresholds prevent rapid NEAR/FAR oscillation while a user
+        # stands near the boundary of the calibrated room.
         if filtered <= self.config.far_threshold:
             return ProximityState.FAR
         if filtered >= self.config.near_threshold:

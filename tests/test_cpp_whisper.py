@@ -9,9 +9,9 @@ import winsound
 
 import numpy as np
 
-from vibebar_windows.cpp_whisper import TurboPaths, _save_wav
+from vibebar_voice.cpp_whisper import TurboPaths, _save_wav
 from vibebar_voice.cpp_whisper import _multipart
-from vibebar_windows.transcription import NullAudioTranscriber
+from vibebar_voice.transcription import NullAudioTranscriber
 from vibebar_windows.audio_cue import NullAudioCue, WindowsWaveCue
 
 
@@ -21,10 +21,15 @@ ROOT = Path(__file__).resolve().parents[1]
 class TurboPathsTests(unittest.TestCase):
     def test_existing_cpp_components_are_discovered(self) -> None:
         paths = TurboPaths.discover(ROOT)
-        paths.validate()
         self.assertEqual(paths.server.name, "whisper-server.exe")
         self.assertIn("large-v3-turbo", paths.model.name)
         self.assertEqual(paths.adapter.name, "turbo.py")
+
+    def test_missing_cpp_components_report_every_required_path(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            paths = TurboPaths.discover(Path(directory))
+            with self.assertRaisesRegex(FileNotFoundError, "whisper-server"):
+                paths.validate()
 
     def test_macos_paths_are_repository_local_and_have_no_windows_adapter(self) -> None:
         paths = TurboPaths.discover_macos(ROOT)

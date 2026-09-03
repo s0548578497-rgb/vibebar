@@ -1,3 +1,5 @@
+"""Load calibrated proximity thresholds without coupling them to the engine."""
+
 from __future__ import annotations
 
 from dataclasses import asdict

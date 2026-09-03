@@ -16,23 +16,23 @@ from .menu import WindowsMenuSocket
 from .files import WindowsFileOpenerSocket
 from .paths import discover
 from .runner import WindowsBashRunner
-from .command_language import CommandVocabulary, LocalizedEntrySocket
 from .custom_commands import CustomCommandRepository, CustomCommandStore
-from .cpp_whisper import CppTurboTranscriber
-from .transcription import AudioTranscriber
 from .view_model import LegacyMenuViewSocket, MenuViewSocket
 from .hotkey import GlobalHotkey, WindowsGlobalHotkey
-from .voice import WakeWordSettings
-from .task_timer import JournalTaskTimerSocket, TaskTimerSocket
-from .categories import CategoryService, JsonClassificationRepository, load_categories
-from .category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
-from .digests import WindowsDigestSocket
 from .audio_cue import AudioCue, WindowsWaveCue
-from .diagnostics import DiagnosticLog, JsonLineDiagnosticLog
 from .break_view import CombinedMenuViewSocket, JournalBreakViewSocket
 from typing import Callable
 from bluetooth_proximity.devices import BluetoothDevice, BluetoothDeviceProvider, JsonSelectedDeviceStore, SelectedDeviceStore
 from bluetooth_proximity.windows_devices import WindowsBluetoothDeviceProvider
+from vibebar_modular.categories import CategoryService, JsonClassificationRepository, load_categories
+from vibebar_modular.category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
+from vibebar_modular.command_language import CommandVocabulary, LocalizedEntrySocket
+from vibebar_modular.local_digests import LocalDigestSocket
+from vibebar_modular.task_timer import JournalTaskTimerSocket, TaskTimerSocket
+from vibebar_voice.controller import WakeWordSettings
+from vibebar_voice.cpp_whisper import CppTurboTranscriber
+from vibebar_voice.diagnostics import DiagnosticLog, JsonLineDiagnosticLog
+from vibebar_voice.transcription import AudioTranscriber
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,7 +126,7 @@ def assemble_windows(
         entry=LegacyEntrySocket(repository, runner),
         clipboard=LegacyClipboardSocket(repository, runner),
         recycle_bin=recycle_bin,
-        digest=WindowsDigestSocket(
+        digest=LocalDigestSocket(
             repository,
             Path(configured["VIBEBAR_DIGEST_DIR"]),
             Path(configured["VIBEBAR_FILE"]),

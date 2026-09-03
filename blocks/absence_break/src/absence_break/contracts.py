@@ -1,3 +1,5 @@
+"""Persistence and journal contracts for the absence-break engine."""
+
 from __future__ import annotations
 
 from typing import Protocol

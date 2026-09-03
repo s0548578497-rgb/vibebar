@@ -1,3 +1,5 @@
+"""Input boundary for replaceable Bluetooth signal readers."""
+
 from __future__ import annotations
 
 from typing import Protocol

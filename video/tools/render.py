@@ -1,3 +1,5 @@
+"""Render independent presentation scenes and concatenate the final film."""
+
 from __future__ import annotations
 
 import argparse

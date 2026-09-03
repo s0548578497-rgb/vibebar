@@ -3,8 +3,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from vibebar_windows.categories import Category, CategoryService, JsonClassificationRepository, NullClassificationRepository
-from vibebar_windows.category_reports import MarkdownCategoryReportWriter, NullCategoryReportWriter
+from vibebar_modular.categories import Category, CategoryService, JsonClassificationRepository, NullClassificationRepository
+from vibebar_modular.category_reports import MarkdownCategoryReportWriter, NullCategoryReportWriter
 
 
 class FixedClock:

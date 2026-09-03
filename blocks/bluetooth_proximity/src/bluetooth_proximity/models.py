@@ -1,3 +1,5 @@
+"""Typed samples, states and thresholds for proximity detection."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -28,7 +28,7 @@ class FakeProcess:
 
 
 class MacSourceTests(unittest.TestCase):
-    @patch("vibebar_macos.rssi_source.subprocess.Popen")
+    @patch("bluetooth_proximity.process_source.subprocess.Popen")
     def test_native_lines_become_typed_samples(self, popen: object) -> None:
         process = FakeProcess(("-51\n", "unknown\n", "missing\n"))
         popen.return_value = process

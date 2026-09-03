@@ -1,3 +1,5 @@
+"""Generate narration for selected manifest scenes without storing API keys."""
+
 from __future__ import annotations
 
 import argparse

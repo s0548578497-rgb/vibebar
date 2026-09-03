@@ -1,3 +1,5 @@
+"""Platform-neutral contract for enforcing one monitor process."""
+
 from __future__ import annotations
 
 from typing import Protocol

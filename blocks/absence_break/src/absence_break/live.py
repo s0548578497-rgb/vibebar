@@ -1,3 +1,5 @@
+"""Composition root for the standalone Windows absence monitor."""
+
 from __future__ import annotations
 
 import json

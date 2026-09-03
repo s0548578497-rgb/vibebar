@@ -1,3 +1,5 @@
+"""Crash-safe JSON persistence for pending and confirmed absence."""
+
 from __future__ import annotations
 
 import json

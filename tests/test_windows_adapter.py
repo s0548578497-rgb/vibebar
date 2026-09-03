@@ -11,7 +11,7 @@ from vibebar_modular.compositions import Action, get_composition
 from vibebar_windows.paths import WindowsPaths
 from vibebar_windows.runner import WindowsBashRunner, _to_git_path
 from vibebar_windows.assembly import assemble_menu_view, assemble_windows, default_environment
-from vibebar_windows.digests import WindowsDigestSocket
+from vibebar_modular.local_digests import LocalDigestSocket
 from vibebar_modular.clock import FixedClock
 from vibebar_modular.contracts import CommandResult
 from vibebar_modular.legacy import LegacyDigestSocket
@@ -76,7 +76,7 @@ class WindowsDigestTests(unittest.TestCase):
             folder = Path(directory)
             runner = RecordingDigestRunner("weekly report")
             legacy = LegacyDigestSocket(ROOT, runner)
-            socket = WindowsDigestSocket(
+            socket = LocalDigestSocket(
                 ROOT,
                 folder / "digests",
                 folder / "journal.md",
@@ -94,7 +94,7 @@ class WindowsDigestTests(unittest.TestCase):
     def test_publish_remains_a_separate_legacy_action(self) -> None:
         runner = RecordingDigestRunner("")
         legacy = LegacyDigestSocket(ROOT, runner)
-        socket = WindowsDigestSocket(
+        socket = LocalDigestSocket(
             ROOT, ROOT / "digests", ROOT / "journal.md", runner, legacy,
             FixedClock(datetime(2030, 1, 2, 12, 0)),
         )

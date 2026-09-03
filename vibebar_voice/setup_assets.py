@@ -1,4 +1,4 @@
-"""Install shared openWakeWord assets and the configured community model."""
+"""Install openWakeWord runtime assets and the configured Hey Computer model."""
 
 from __future__ import annotations
 
@@ -41,7 +41,11 @@ def main() -> None:
     local = Path(os.environ.get("LOCALAPPDATA", Path.home()))
     target = Path(configured) if configured else local / "VibeBar" / "models"
     target.mkdir(parents=True, exist_ok=True)
-    openwakeword.utils.download_models(["hey_jarvis_v0.1"], str(target))
+    # The package downloader supplies the shared mel and embedding models.
+    # The wake phrase itself is installed separately and checksum-verified.
+    # A non-official name makes openWakeWord fetch only its shared feature
+    # models; downloading an empty list would pull every bundled wake phrase.
+    openwakeword.utils.download_models(["hey_computer.onnx"], str(target))
     install_computer_model(target)
 
 

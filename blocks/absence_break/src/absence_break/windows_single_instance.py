@@ -1,3 +1,5 @@
+"""Windows named-mutex implementation of the single-instance contract."""
+
 from __future__ import annotations
 
 import ctypes

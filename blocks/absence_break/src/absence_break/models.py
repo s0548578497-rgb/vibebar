@@ -1,3 +1,5 @@
+"""Value objects shared by absence detection and persistence."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

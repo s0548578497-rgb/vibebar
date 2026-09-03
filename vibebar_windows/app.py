@@ -5,9 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Callable
 
-from vibebar_modular.compositions import Action, get_composition
+from vibebar_modular.compositions import get_composition
 from vibebar_modular.contracts import CommandResult
 from vibebar_modular.achievements import MarkdownAchievementSocket, PendingAchievementCapture
 
@@ -28,23 +27,37 @@ from .assembly import (
 )
 from .clipboard_watcher import ClipboardWatcher
 from .category_panel import CategoryPanel
-from .language import LanguageController
+from vibebar_modular.language import LanguageController
 from .tray import TrayController
 from .view_model import ActivityItem, VibeBarView
-from .voice import VoiceController
-from .diagnostics import text_fingerprint
+from vibebar_voice.controller import VoiceController
+from vibebar_voice.diagnostics import text_fingerprint
 from .journal_events import WindowsJournalChangeListener
 from .bluetooth_panel import BluetoothDevicePanel
-class VibeBarWindow:
+from .app_layout import WindowLayoutMixin
+
+
+class VibeBarWindow(WindowLayoutMixin):
     def __init__(self, repository: Path) -> None:
         self.repository = repository
+        self._assemble_services()
+        self._create_window_state()
+        self._create_runtime_controllers()
+        self._configure_window()
+        self._build()
+        self._start_background_services()
+
+    def _assemble_services(self) -> None:
+        """Create business adapters before any UI or background thread exists."""
+        repository = self.repository
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
-        self.task_timer = assemble_task_timer(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
-        self.achievements = MarkdownAchievementSocket(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        journal = Path(environment["VIBEBAR_FILE"])
+        self.task_timer = assemble_task_timer(journal, self.sockets.clock)
+        self.achievements = MarkdownAchievementSocket(journal, self.sockets.clock)
         self.achievement_capture = PendingAchievementCapture(self.achievements)
         self.diagnostics = assemble_diagnostics(repository, self.sockets.clock)
-        category_sockets = assemble_categories(repository, Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        category_sockets = assemble_categories(repository, journal, self.sockets.clock)
         self.categories = category_sockets.service
         self.category_reports = category_sockets.reports
         commands = assemble_commands(repository, self.sockets.entry)
@@ -52,13 +65,21 @@ class VibeBarWindow:
         self.entry = commands.entry
         self.view_socket = assemble_menu_view(repository, environment, self.sockets.clock)
         self.composition = get_composition("windows")
+
+    def _create_window_state(self) -> None:
+        """Create Tk-owned state on the main thread."""
+        repository = self.repository
         self.language = LanguageController(repository / "resources" / "locales", repository / "windows" / "settings.json")
         self.root = tk.Tk()
-        self.journal_listener = WindowsJournalChangeListener(lambda: self.root.after(0, self.refresh))
         self.text = tk.StringVar()
         self.current = tk.StringVar(value="—")
         self.status = tk.StringVar()
         self.trees: dict[str, ttk.Treeview] = {}
+
+    def _create_runtime_controllers(self) -> None:
+        """Wire controllers without starting threads; startup order is explicit below."""
+        repository = self.repository
+        self.journal_listener = WindowsJournalChangeListener(lambda: self.root.after(0, self.refresh))
         self.watcher = ClipboardWatcher(self.root, self.sockets.clipboard, self.refresh)
         self.voice = VoiceController(
             self.voice_text_from_thread,
@@ -75,8 +96,9 @@ class VibeBarWindow:
         self.category_panel = CategoryPanel(self.categories, self.t, lambda: self.language.catalog.code)
         bluetooth = assemble_bluetooth_devices(repository)
         self.bluetooth_panel = BluetoothDevicePanel(bluetooth.provider, bluetooth.store, self.t)
-        self._configure_window()
-        self._build()
+
+    def _start_background_services(self) -> None:
+        """Start observers only after every callback and widget has been constructed."""
         self._start_tray()
         self.hotkey.start()
         self.refresh()
@@ -86,65 +108,6 @@ class VibeBarWindow:
 
     def t(self, key: str) -> str:
         return self.language.catalog.text(key)
-    def _configure_window(self) -> None:
-        self.root.geometry("760x620")
-        self.root.minsize(650, 500)
-        self.root.protocol("WM_DELETE_WINDOW", self.hide)
-    def _build(self) -> None:
-        self.root.title(self.t("app_title"))
-        self.status.set(self.t("ready"))
-        for child in self.root.winfo_children():
-            child.destroy()
-        outer = ttk.Frame(self.root, padding=14)
-        outer.pack(fill="both", expand=True)
-        self._build_header(outer)
-        self._build_input(outer)
-        self._build_tabs(outer)
-        self._build_footer(outer)
-    def _build_header(self, parent: ttk.Frame) -> None:
-        header = ttk.LabelFrame(parent, text=self.t("current"), padding=10)
-        header.pack(fill="x", pady=(0, 10))
-        ttk.Label(header, textvariable=self.current, font=("Segoe UI", 15, "bold"), anchor="e").pack(fill="x")
-    def _build_input(self, parent: ttk.Frame) -> None:
-        row = ttk.Frame(parent)
-        row.pack(fill="x", pady=(0, 10))
-        entry = ttk.Entry(row, textvariable=self.text, justify="right", font=("Segoe UI", 11))
-        entry.pack(side="right", fill="x", expand=True, padx=(8, 0))
-        entry.bind("<Return>", self._submit_event)
-        self._button(row, Action.ADD_ENTRY, self.t("submit"), self.submit)
-        self._button(row, Action.VOICE_INPUT, self.t("what_achieved"), self.capture_achievement)
-        entry.focus_set()
-    def _build_tabs(self, parent: ttk.Frame) -> None:
-        notebook = ttk.Notebook(parent)
-        notebook.pack(fill="both", expand=True)
-        self._activity_tab(notebook, "tasks")
-        self._activity_tab(notebook, "ideas")
-        self._activity_tab(notebook, "achievements")
-        self._activity_tab(notebook, "todos")
-        self._activity_tab(notebook, "breaks")
-        self._clipboard_tab(notebook)
-        self._reports_tab(notebook)
-        self.category_panel.build(notebook)
-        self.bluetooth_panel.build(notebook)
-        self._commands_tab(notebook)
-    def _commands_tab(self, notebook: ttk.Notebook) -> None:
-        frame = ttk.Frame(notebook, padding=8)
-        notebook.add(frame, text=self.t("custom_commands"))
-        row = ttk.Frame(frame)
-        row.pack(fill="x", pady=(0, 8))
-        phrase = ttk.Entry(row, justify="right")
-        phrase.pack(side="right", fill="x", expand=True, padx=4)
-        kind = ttk.Combobox(row, state="readonly", values=("task", "idea", "todo", "pause"), width=12)
-        kind.set("task")
-        kind.pack(side="right", padx=4)
-        ttk.Button(row, text=self.t("add_command"), command=lambda: self._add_command(phrase, kind)).pack(side="right")
-        tree = ttk.Treeview(frame, columns=("phrase", "kind"), show="headings")
-        tree.heading("phrase", text=self.t("command_phrase"))
-        tree.heading("kind", text=self.t("command_kind"))
-        tree.pack(fill="both", expand=True)
-        for command in self.command_store.load():
-            tree.insert("", "end", values=(command.phrase, command.kind))
-        ttk.Button(frame, text=self.t("delete"), command=lambda: self._delete_command(tree)).pack(anchor="w", pady=6)
     def _add_command(self, phrase: ttk.Entry, kind: ttk.Combobox) -> None:
         self.command_store.add(phrase.get(), kind.get())
         self._reload_entry()
@@ -159,57 +122,6 @@ class VibeBarWindow:
             self.refresh()
     def _reload_entry(self) -> None:
         self.entry = rebuild_command_entry(self.repository, self.sockets.entry, self.command_store)
-    def _activity_tab(self, notebook: ttk.Notebook, key: str) -> None:
-        frame = ttk.Frame(notebook, padding=8)
-        notebook.add(frame, text=self.t(key))
-        tree = ttk.Treeview(frame, columns=("time", "text"), show="headings")
-        tree.heading("time", text=self.t("break_start") if key == "breaks" else "⏱")
-        tree.heading("text", text=self.t(key))
-        tree.column("time", width=150 if key == "breaks" else 80, anchor="center", stretch=False)
-        tree.column("text", width=500, anchor="e")
-        tree.pack(fill="both", expand=True)
-        self.trees[key] = tree
-    def _clipboard_tab(self, notebook: ttk.Notebook) -> None:
-        frame = ttk.Frame(notebook, padding=8)
-        notebook.add(frame, text=self.t("clipboard"))
-        tree = ttk.Treeview(frame, columns=("number", "preview"), show="headings")
-        tree.heading("number", text="#")
-        tree.heading("preview", text=self.t("clipboard"))
-        tree.column("number", width=50, anchor="center", stretch=False)
-        tree.column("preview", width=530, anchor="e")
-        tree.pack(fill="both", expand=True)
-        self.trees["clipboard"] = tree
-        buttons = ttk.Frame(frame)
-        buttons.pack(fill="x", pady=(8, 0))
-        self._button(buttons, Action.CAPTURE_CLIPBOARD, self.t("capture_clipboard"), self.capture_clipboard)
-        self._button(buttons, Action.COPY_CLIPBOARD, self.t("copy"), self.copy_clipboard)
-        self._button(buttons, Action.DELETE_CLIPBOARD, self.t("delete"), self.delete_clipboard)
-        self._button(buttons, Action.CLEAR_CLIPBOARD, self.t("clear"), self.clear_clipboard)
-    def _reports_tab(self, notebook: ttk.Notebook) -> None:
-        frame = ttk.Frame(notebook, padding=18)
-        notebook.add(frame, text=self.t("reports"))
-        self._wide_button(frame, Action.DAILY_DIGEST, self.t("daily_digest"), self.daily_digest)
-        self._wide_button(frame, Action.DAILY_DIGEST, self.t("rebuild_digest"), self.rebuild_digest)
-        self._wide_button(frame, Action.WEEKLY_DIGEST, self.t("weekly_digest"), self.weekly_digest)
-        self._wide_button(frame, Action.PUBLISH_DIGEST, self.t("publish_digest"), self.publish_digest)
-        self._wide_button(frame, Action.OPEN_JOURNAL, self.t("edit_journal"), self.open_journal)
-    def _build_footer(self, parent: ttk.Frame) -> None:
-        footer = ttk.Frame(parent)
-        footer.pack(fill="x", pady=(10, 0))
-        ttk.Label(footer, textvariable=self.status).pack(side="left")
-        ttk.Label(footer, text=self.t("hotkey_hint")).pack(side="left", padx=8)
-        ttk.Button(footer, text=self.t("hide_window"), command=self.hide).pack(side="right", padx=3)
-        ttk.Button(footer, text=self.t("language"), command=self.switch_language).pack(side="right", padx=3)
-        watcher_key = "watcher_on" if self.watcher.enabled else "watcher_off"
-        ttk.Button(footer, text=self.t(watcher_key), command=self.toggle_watcher).pack(side="right", padx=3)
-        voice_key = "voice_on" if self.voice.enabled else "voice_off"
-        self._button(footer, Action.VOICE_INPUT, self.t(voice_key), self.toggle_voice)
-    def _button(self, parent: ttk.Frame, action: Action, label: str, command: Callable[[], None]) -> None:
-        if self.composition.contains(action):
-            ttk.Button(parent, text=label, command=command).pack(side="right", padx=3)
-    def _wide_button(self, parent: ttk.Frame, action: Action, label: str, command: Callable[[], None]) -> None:
-        if self.composition.contains(action):
-            ttk.Button(parent, text=label, command=command).pack(fill="x", pady=4)
     def refresh(self) -> None:
         try:
             view = self.view_socket.load()

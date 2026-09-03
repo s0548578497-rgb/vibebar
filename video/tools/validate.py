@@ -1,3 +1,5 @@
+"""Validate expected presentation assets and inspect final media streams."""
+
 from __future__ import annotations
 
 import json

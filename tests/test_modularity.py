@@ -8,7 +8,14 @@ from vibebar_modular.assembly import assemble
 from vibebar_modular.compositions import Action, get_composition
 from vibebar_modular.contracts import CommandResult
 from vibebar_modular.legacy import LegacyDigestSocket, LegacyEntrySocket
-from vibebar_modular.nulls import NullEntrySocket, NullRecycleBin
+from vibebar_modular.nulls import (
+    NullClipboardSocket,
+    NullDigestSocket,
+    NullEntrySocket,
+    NullFileOpenerSocket,
+    NullMenuSocket,
+    NullRecycleBin,
+)
 from vibebar_modular.sockets import build_sockets
 
 
@@ -50,12 +57,25 @@ class SafeDirectionTests(unittest.TestCase):
 
     def test_null_recycle_bin_never_invokes_external_code(self) -> None:
         recycle_bin = NullRecycleBin()
-        self.assertTrue(recycle_bin.delete_clipboard_item(2).succeeded)
-        self.assertTrue(recycle_bin.clear_clipboard().succeeded)
+        self.assertFalse(recycle_bin.delete_clipboard_item(2).succeeded)
+        self.assertFalse(recycle_bin.clear_clipboard().succeeded)
 
     def test_identity_mode_seals_deletion_by_default(self) -> None:
         sockets = build_sockets(Path("/repository"))
         self.assertIsInstance(sockets.recycle_bin, NullRecycleBin)
+
+    def test_every_disconnected_command_reports_failure(self) -> None:
+        results = (
+            NullClipboardSocket().add_current(),
+            NullClipboardSocket().copy(1),
+            NullClipboardSocket().show(1),
+            NullDigestSocket().build_day(),
+            NullDigestSocket().build_week(),
+            NullDigestSocket().publish_day(),
+            NullMenuSocket().refresh(),
+            NullFileOpenerSocket().open(Path("journal.md")),
+        )
+        self.assertTrue(all(not result.succeeded for result in results))
 
 
 class CompositionTests(unittest.TestCase):

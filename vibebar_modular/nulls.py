@@ -9,7 +9,10 @@ from .contracts import CommandResult
 
 
 def _sealed() -> CommandResult:
-    return CommandResult(0)
+    # A disconnected capability must be observable by its caller.  Returning
+    # success here would make the UI claim that data was opened, copied or
+    # published when no implementation was connected.
+    return CommandResult(78, stderr="socket is sealed")
 
 
 class NullEntrySocket:
