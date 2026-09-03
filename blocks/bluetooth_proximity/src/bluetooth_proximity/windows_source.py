@@ -30,6 +30,8 @@ class WindowsClassicRssiSource:
         try:
             return self.values.get(timeout=self.timeout)
         except queue.Empty:
+            if self.process.poll() is not None:
+                return SignalSample(None, connected=False)
             return SignalSample(None)
 
     def close(self) -> None:

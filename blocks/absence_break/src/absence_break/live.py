@@ -8,6 +8,7 @@ from bluetooth_proximity.config_store import JsonConfigStore
 from bluetooth_proximity.engine import ProximityEngine
 from bluetooth_proximity.models import ProximityState
 from bluetooth_proximity.windows_source import WindowsClassicRssiSource
+from bluetooth_proximity.resilience import RestartingSignalSource, SourceHealthSink
 
 from .clock import SystemClock
 from .coordinator import AbsenceCoordinator
@@ -30,6 +31,15 @@ class LoggedBreakWriter:
         self.notifier.notify()
 
 
+class JsonHealthSink(SourceHealthSink):
+    def __init__(self, log: Path, clock: SystemClock) -> None:
+        self.log = log
+        self.clock = clock
+
+    def report(self, event: str) -> None:
+        _log(self.log, event, self.clock.now().isoformat())
+
+
 def main() -> None:
     repository = Path(__file__).resolve().parents[4]
     proximity = repository / "blocks" / "bluetooth_proximity"
@@ -43,9 +53,13 @@ def main() -> None:
     )
     coordinator = AbsenceCoordinator(absence, writer, store)
     engine = ProximityEngine(JsonConfigStore(proximity / "profiles" / "mediatek_relative.json").load())
-    source = WindowsClassicRssiSource(proximity / "native" / "ClassicRssiReader.exe", "JBL TUNE125BT")
     clock = SystemClock()
     log = runtime / "events.jsonl"
+    reader = proximity / "native" / "ClassicRssiReader.exe"
+    source = RestartingSignalSource(
+        lambda: WindowsClassicRssiSource(reader, "JBL TUNE125BT"),
+        health=JsonHealthSink(log, clock),
+    )
     _log(log, "MONITOR_STARTED", clock.now().isoformat(), pid=os.getpid())
     previous = ProximityState.UNKNOWN
     try:

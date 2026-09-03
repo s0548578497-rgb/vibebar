@@ -42,6 +42,17 @@ class WindowsSourceTests(unittest.TestCase):
         source.close()
         self.assertTrue(process.stopped)
 
+    @patch("bluetooth_proximity.windows_source.subprocess.Popen")
+    def test_silent_exited_reader_is_an_explicit_disconnect(self, popen: object) -> None:
+        process = FakeProcess()
+        process.stdout = iter(())
+        process.stopped = True
+        popen.return_value = process
+        source = WindowsClassicRssiSource(Path("reader.exe"), "headset", timeout=0.01)
+        sample = source.read()
+        self.assertIsNone(sample.rssi)
+        self.assertFalse(sample.connected)
+
 
 if __name__ == "__main__":
     unittest.main()
