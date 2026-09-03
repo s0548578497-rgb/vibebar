@@ -1,5 +1,27 @@
 # VibeBar
 
+## Modular cross-platform fork
+
+This branch preserves Margulan Seissembayev's original journal format, time
+model and macOS scripts, and adds a modular Windows/macOS product layer. Major
+extensions include a native Windows interface, Russian/English/Hebrew language
+packs, user-defined voice commands, local `Hey Computer` activation,
+`whisper.cpp` support, achievement notes, post-hoc task categories, Bluetooth
+absence detection with a five-minute retroactive break rule, safe Null adapters
+and cross-platform tests.
+
+- [Watch the Russian presentation](video/vibebar-russian-demo.mp4)
+- [Read the complete Russian feature comparison](video/description-ru.md)
+- [Windows installation](windows/README.md)
+- [macOS modular installation](macos/README.md)
+- [Architecture and safety rules](ARCHOV.md)
+
+The original work and its four core tools are credited below. This fork's
+extensions are documented separately so that original and added work remain
+clear.
+
+---
+
 **English** · A macOS menu-bar app. Say what you're doing — it logs itself. Four tools in one menu:
 
 | | |

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from vibebar_modular.contracts import Clock, EntrySocket
@@ -141,7 +142,7 @@ def assemble_windows(
 
 def default_environment(repository: Path) -> dict[str, str]:
     return {
-        "VIBEBAR_FILE": str(Path.home() / "vibebar-journal.md"),
+        "VIBEBAR_FILE": os.environ.get("VIBEBAR_FILE", str(Path.home() / "vibebar-journal.md")),
         "VIBEBAR_BUFFER": str(repository / "clipboard.txt"),
         "VIBEBAR_DIGEST_DIR": str(repository / "digests"),
         "VIBEBAR_AUTOPASTE": "0",
