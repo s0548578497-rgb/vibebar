@@ -55,10 +55,10 @@ def parse_swiftbar_output(output: str) -> VibeBarView:
     current = sections[0][0].removeprefix("▸ ").strip() if sections and sections[0] else "—"
     return VibeBarView(
         current=current,
-        tasks=_activity_items(_section(sections, 1)),
-        ideas=_activity_items(_section(sections, 2)),
-        todos=_activity_items(_section(sections, 3)),
-        clipboard=_clipboard_items(_section(sections, 4)),
+        tasks=_activity_items(_named_section(sections, "tasks", 1)),
+        ideas=_activity_items(_named_section(sections, "ideas", 2)),
+        todos=_activity_items(_named_section(sections, "todos", 3)),
+        clipboard=_clipboard_items(_named_section(sections, "clipboard", 4)),
     )
 
 
@@ -74,6 +74,11 @@ def _sections(lines: list[str]) -> list[list[str]]:
 
 def _section(sections: list[list[str]], index: int) -> list[str]:
     return sections[index] if index < len(sections) else []
+
+
+def _named_section(sections: list[list[str]], name: str, fallback: int) -> list[str]:
+    marker = f"vibebar_section={name}"
+    return next((section for section in sections if section and marker in section[0]), _section(sections, fallback))
 
 
 def _activity_items(lines: list[str]) -> tuple[ActivityItem, ...]:

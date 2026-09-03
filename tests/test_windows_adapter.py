@@ -10,7 +10,7 @@ from unittest.mock import patch
 from vibebar_modular.compositions import Action, get_composition
 from vibebar_windows.paths import WindowsPaths
 from vibebar_windows.runner import WindowsBashRunner, _to_git_path
-from vibebar_windows.assembly import assemble_windows
+from vibebar_windows.assembly import assemble_menu_view, assemble_windows, default_environment
 from vibebar_windows.digests import WindowsDigestSocket
 from vibebar_modular.clock import FixedClock
 from vibebar_modular.contracts import CommandResult
@@ -56,6 +56,18 @@ class WindowsRunnerTests(unittest.TestCase):
             result = sockets.entry.submit("adapter integration test")
             self.assertTrue(result.succeeded, result.stderr)
             self.assertIn("adapter integration test", journal.read_text(encoding="utf-8"))
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows integration test")
+    def test_live_menu_renderer_uses_injected_windows_python(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            journal = Path(directory) / "journal.md"
+            journal.write_text(f"## {date.today():%Y-%m-%d}\n- 12:00 · visible entry\n", encoding="utf-8")
+            environment = default_environment(ROOT)
+            environment["VIBEBAR_FILE"] = str(journal)
+            view = assemble_menu_view(
+                ROOT, environment, FixedClock(datetime(2030, 1, 2, 12, 1)),
+            ).load()
+            self.assertTrue(any(item.text == "visible entry" for item in view.tasks))
 
 
 class WindowsDigestTests(unittest.TestCase):

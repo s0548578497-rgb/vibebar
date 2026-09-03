@@ -9,4 +9,5 @@ export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"
 ROOT="__ROOT__"
 [ -f "$ROOT/config.env" ] && . "$ROOT/config.env"
 export PYTHONPATH="$ROOT"
-exec "$ROOT/.venv-macos/bin/python" -m vibebar_macos.menu
+PYTHON="${VIBEBAR_PYTHON:-$ROOT/.venv-macos/bin/python}"
+exec "$PYTHON" -m vibebar_macos.menu

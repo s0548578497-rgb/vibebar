@@ -34,6 +34,7 @@ class AdaptiveBoundarySettings:
     noise_multiplier: float = 1.60
     absolute_floor: float = 0.004
     floor_attack: float = 0.05
+    release_ratio: float = 0.35
 
 
 class AdaptiveSpeechBoundary:
@@ -47,6 +48,7 @@ class AdaptiveSpeechBoundary:
         self.calibration: list[float] = []
         self.floor = self.settings.absolute_floor
         self.speech_seen = False
+        self.speech_peak = 0.0
         self.quiet_blocks = 0
 
     @property
@@ -60,17 +62,21 @@ class AdaptiveSpeechBoundary:
     def observe(self, frame: np.ndarray) -> BoundaryDecision:
         level = self._level(frame)
         threshold = max(self.floor * self.settings.noise_multiplier, self.settings.absolute_floor)
-        voiced = level > threshold
-        if voiced:
+        if not self.speech_seen and level > threshold:
             self.speech_seen = True
+            self.speech_peak = max(self.speech_peak, level)
             self.quiet_blocks = 0
-        elif self.speech_seen:
-            self.quiet_blocks += 1
-        else:
+        elif not self.speech_seen:
             attack = self.settings.floor_attack
             self.floor = (1.0 - attack) * self.floor + attack * level
+        release = max(threshold, self.speech_peak * self.settings.release_ratio)
+        if self.speech_seen and level <= release:
+            self.quiet_blocks += 1
+        elif self.speech_seen and level > release:
+            self.speech_peak = max(self.speech_peak, level)
+            self.quiet_blocks = 0
         return BoundaryDecision(self.speech_seen, self.speech_seen and self.quiet_blocks >= self.end_blocks,
-                                level * 32_768.0, threshold * 32_768.0)
+                                level * 32_768.0, release * 32_768.0)
 
     @staticmethod
     def _level(frame: np.ndarray) -> float:

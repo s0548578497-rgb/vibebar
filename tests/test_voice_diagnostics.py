@@ -66,6 +66,17 @@ class CapturePolicyTests(unittest.TestCase):
         self.assertFalse(boundary.observe(noise).finished)
         self.assertTrue(boundary.observe(noise).finished)
 
+    def test_release_hysteresis_ends_when_noise_rises_after_calibration(self) -> None:
+        settings = AdaptiveBoundarySettings(
+            calibration_seconds=0.08, end_silence_seconds=0.16, noise_multiplier=1.6,
+        )
+        boundary = AdaptiveSpeechBoundary(settings)
+        boundary.calibrate(np.full(1_280, 100, dtype=np.int16))
+        boundary.observe(np.full(1_280, 2_500, dtype=np.int16))
+        raised_noise = np.full(1_280, 300, dtype=np.int16)
+        self.assertFalse(boundary.observe(raised_noise).finished)
+        self.assertTrue(boundary.observe(raised_noise).finished)
+
 
 class DiagnosticLogTests(unittest.TestCase):
     def test_json_log_contains_metadata_without_spoken_text(self) -> None:

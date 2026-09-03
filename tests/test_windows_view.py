@@ -14,6 +14,29 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LegacyViewTests(unittest.TestCase):
+    def test_named_sections_do_not_depend_on_tab_order(self) -> None:
+        output = """▶ task
+---
+BREAKS | vibebar_section=breaks
+09:00  pause
+---
+TASKS | vibebar_section=tasks
+09:10  actual task
+---
+IDEAS | vibebar_section=ideas
+09:20  an idea
+---
+TODOS | vibebar_section=todos
+09:30  a todo
+---
+CLIPBOARD | vibebar_section=clipboard
+capture
+"""
+        view = parse_swiftbar_output(output)
+        self.assertEqual(view.tasks[0].text, "actual task")
+        self.assertEqual(view.ideas[0].text, "an idea")
+        self.assertEqual(view.todos[0].text, "a todo")
+
     def test_original_swiftbar_sections_become_typed_view(self) -> None:
         output = """▸ current task · 4m
 ---

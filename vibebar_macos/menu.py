@@ -29,7 +29,7 @@ def render(root: Path, sockets: MacSocketSet) -> str:
     timer = JournalTaskTimerSocket(journal, sockets.core.clock).load().display(sockets.core.clock.now())
     lines = [f"▶ {timer}", "---", _action(t("submit"), command, "add")]
     for key in ("tasks", "breaks", "ideas", "todos"):
-        lines += _section(t(key), sections[key])
+        lines += _section(t(key), sections[key], key)
     lines += _clipboard(root, t, command)
     lines += ["---", t("reports") + " | size=10"]
     lines += [_action(t("daily_digest"), command, "daily"), _action(t("rebuild_digest"), command, "rebuild")]
@@ -69,8 +69,8 @@ def _kind(text: str) -> tuple[str, str]:
     return "tasks", text
 
 
-def _section(title: str, rows: list[tuple[str, str]]) -> list[str]:
-    lines = ["---", f"{title} ({len(rows)}) | size=10"]
+def _section(title: str, rows: list[tuple[str, str]], key: str) -> list[str]:
+    lines = ["---", f"{title} ({len(rows)}) | size=10 vibebar_section={key}"]
     lines.extend(f"{time}  {_safe(text)} | font=Menlo size=12" for time, text in reversed(rows[-7:]))
     return lines
 
@@ -84,7 +84,7 @@ def _clipboard(root: Path, translate: Callable[[str], str], command: str) -> lis
                 rows.append((index, base64.b64decode(line).decode("utf-8", "replace")))
             except ValueError:
                 continue
-    lines = ["---", f"{translate('clipboard')} ({len(rows)}) | size=10"]
+    lines = ["---", f"{translate('clipboard')} ({len(rows)}) | size=10 vibebar_section=clipboard"]
     lines.append(_action(translate("capture_clipboard"), command, "clipboard-add"))
     for index, value in reversed(rows[-10:]):
         lines.append(_action(f"{index}  {_safe(value, 42)}", command, "clipboard-copy", str(index)))
