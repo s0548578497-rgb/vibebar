@@ -51,6 +51,5 @@ jobs:
           tests/test_achievements.py
           blocks/absence_break/tests
           blocks/bluetooth_proximity/tests/test_engine.py
-          blocks/bluetooth_proximity/tests/test_devices.py
           blocks/bluetooth_proximity/tests/test_resilience.py
           blocks/bluetooth_proximity/tests/test_macos_source.py

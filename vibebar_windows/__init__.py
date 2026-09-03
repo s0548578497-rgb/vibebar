@@ -1,5 +1,6 @@
-"""Native Windows adapters for the unchanged VibeBar scripts."""
+"""Windows package.
 
-from .assembly import assemble_windows
-
-__all__ = ["assemble_windows"]
+Platform-specific modules are intentionally not imported here: importing a
+portable helper such as ``vibebar_windows.custom_commands`` must remain safe on
+macOS CI.  Composition roots are imported explicitly from ``assembly``.
+"""
