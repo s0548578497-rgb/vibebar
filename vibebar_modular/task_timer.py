@@ -60,6 +60,6 @@ class JournalTaskTimerSocket:
             if raw.startswith("## "):
                 in_day = False
             match = re.match(r"^- (\d{2}:\d{2}) · (.*)$", raw) if in_day else None
-            if match and not match.group(2).startswith(("💡", "❗")):
+            if match and not match.group(2).startswith(("💡", "❗", "✅")):
                 last = match.group(1), match.group(2)
         return last

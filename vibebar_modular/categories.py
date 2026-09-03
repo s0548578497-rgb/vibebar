@@ -120,7 +120,7 @@ class CategoryService:
                 current = day.group(1)
                 continue
             match = re.match(r"^- (\d{2}:\d{2}) · (.*)$", line)
-            if first <= current <= last and match and not match.group(2).startswith(("💡", "❗")):
+            if first <= current <= last and match and not match.group(2).startswith(("💡", "❗", "✅")):
                 moment = datetime.strptime(f"{current} {match.group(1)}", "%Y-%m-%d %H:%M")
                 rows.append((moment, current, match.group(1), match.group(2)))
         return rows

@@ -9,6 +9,7 @@ from typing import Callable
 
 from vibebar_modular.compositions import Action, get_composition
 from vibebar_modular.contracts import CommandResult
+from vibebar_modular.achievements import MarkdownAchievementSocket, PendingAchievementCapture
 
 from .assembly import (
     assemble_commands,
@@ -40,6 +41,8 @@ class VibeBarWindow:
         environment = default_environment(repository)
         self.sockets = assemble_windows(repository, environment, allow_deletion=True)
         self.task_timer = assemble_task_timer(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        self.achievements = MarkdownAchievementSocket(Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
+        self.achievement_capture = PendingAchievementCapture(self.achievements)
         self.diagnostics = assemble_diagnostics(repository, self.sockets.clock)
         category_sockets = assemble_categories(repository, Path(environment["VIBEBAR_FILE"]), self.sockets.clock)
         self.categories = category_sockets.service
@@ -109,12 +112,14 @@ class VibeBarWindow:
         entry.pack(side="right", fill="x", expand=True, padx=(8, 0))
         entry.bind("<Return>", self._submit_event)
         self._button(row, Action.ADD_ENTRY, self.t("submit"), self.submit)
+        self._button(row, Action.VOICE_INPUT, self.t("what_achieved"), self.capture_achievement)
         entry.focus_set()
     def _build_tabs(self, parent: ttk.Frame) -> None:
         notebook = ttk.Notebook(parent)
         notebook.pack(fill="both", expand=True)
         self._activity_tab(notebook, "tasks")
         self._activity_tab(notebook, "ideas")
+        self._activity_tab(notebook, "achievements")
         self._activity_tab(notebook, "todos")
         self._activity_tab(notebook, "breaks")
         self._clipboard_tab(notebook)
@@ -199,15 +204,12 @@ class VibeBarWindow:
         ttk.Button(footer, text=self.t(watcher_key), command=self.toggle_watcher).pack(side="right", padx=3)
         voice_key = "voice_on" if self.voice.enabled else "voice_off"
         self._button(footer, Action.VOICE_INPUT, self.t(voice_key), self.toggle_voice)
-
     def _button(self, parent: ttk.Frame, action: Action, label: str, command: Callable[[], None]) -> None:
         if self.composition.contains(action):
             ttk.Button(parent, text=label, command=command).pack(side="right", padx=3)
-
     def _wide_button(self, parent: ttk.Frame, action: Action, label: str, command: Callable[[], None]) -> None:
         if self.composition.contains(action):
             ttk.Button(parent, text=label, command=command).pack(fill="x", pady=4)
-
     def refresh(self) -> None:
         try:
             view = self.view_socket.load()
@@ -218,26 +220,23 @@ class VibeBarWindow:
         self._update_timer_display()
         self._fill_activity("tasks", view.tasks)
         self._fill_activity("ideas", view.ideas)
+        self._fill_activity("achievements", tuple(ActivityItem(x.time, x.text) for x in self.achievements.load_today()))
         self._fill_activity("todos", view.todos)
         self._fill_activity("breaks", view.breaks)
         self._fill_clipboard(view)
         self.category_panel.refresh()
-
     def _fill_activity(self, key: str, items: tuple[ActivityItem, ...]) -> None:
         tree = self.trees[key]
         tree.delete(*tree.get_children())
         for item in items:
             tree.insert("", "end", values=(item.time, item.text))
-
     def _fill_clipboard(self, view: VibeBarView) -> None:
         tree = self.trees["clipboard"]
         tree.delete(*tree.get_children())
         for item in view.clipboard:
             tree.insert("", "end", iid=str(item.source_index), values=(item.display_index, item.preview))
-
     def _submit_event(self, _event: tk.Event[tk.Misc]) -> None:
         self.submit()
-
     def submit(self) -> None:
         text = self.text.get().strip()
         if text:
@@ -246,12 +245,10 @@ class VibeBarWindow:
             if result.succeeded:
                 self.text.set("")
                 self.refresh()
-
     def capture_clipboard(self) -> None:
         result = self.sockets.clipboard.add_current()
         self._result(result, "clipboard_saved")
         self.refresh()
-
     def copy_clipboard(self) -> None:
         index = self._selected_clipboard_index()
         if index is None:
@@ -324,9 +321,13 @@ class VibeBarWindow:
     def voice_text_from_thread(self, text: str) -> None:
         self.root.after(0, lambda: self._submit_voice(text))
 
+    def capture_achievement(self) -> None:
+        self.achievement_capture.arm()
+        self.voice.request_command()
+
     def _submit_voice(self, text: str) -> None:
         self.diagnostics.event("voice_text_received", characters=len(text), fingerprint=text_fingerprint(text))
-        result = self.entry.submit(text)
+        result = self.achievement_capture.submit_if_armed(text) or self.entry.submit(text)
         self.diagnostics.event("journal_submit_completed", exit_code=result.exit_code)
         self._result(result, "saved")
         self.refresh()
