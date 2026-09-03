@@ -5,21 +5,10 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 import threading
-from typing import Callable, Protocol
+from typing import Callable
 
-
-class GlobalHotkey(Protocol):
-    def start(self) -> None: ...
-    def close(self) -> None: ...
-
-
-class NullGlobalHotkey:
-    def start(self) -> None:
-        return None
-
-    def close(self) -> None:
-        return None
-
+from vibebar_modular.platform_contracts import GlobalHotkey
+from vibebar_modular.platform_nulls import NullGlobalHotkey
 
 class WindowsGlobalHotkey:
     HOTKEY_ID = 0x5642

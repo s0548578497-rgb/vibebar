@@ -6,7 +6,12 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGES = (ROOT / "vibebar_modular", ROOT / "vibebar_windows", ROOT / "windows" / "helpers")
+PACKAGES = (
+    ROOT / "vibebar_modular",
+    ROOT / "vibebar_windows",
+    ROOT / "vibebar_macos",
+    ROOT / "windows" / "helpers",
+)
 
 
 class ArchitectureRulesTests(unittest.TestCase):

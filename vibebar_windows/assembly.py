@@ -91,7 +91,7 @@ def rebuild_command_entry(repository: Path, inner: EntrySocket, store: CustomCom
 
 
 def _localized_entry(repository: Path, inner: EntrySocket, store: CustomCommandRepository) -> EntrySocket:
-    base = CommandVocabulary.load(repository / "windows" / "command_words.json")
+    base = CommandVocabulary.load(repository / "resources" / "command_words.json")
     return LocalizedEntrySocket(inner, base.merged(store.aliases()))
 
 

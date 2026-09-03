@@ -20,7 +20,7 @@ class CommandLanguageTests(unittest.TestCase):
     def setUp(self) -> None:
         root = Path(__file__).resolve().parents[1]
         self.inner = RecordingEntry()
-        words = CommandVocabulary.load(root / "windows" / "command_words.json")
+        words = CommandVocabulary.load(root / "resources" / "command_words.json")
         self.socket = LocalizedEntrySocket(self.inner, words)
 
     def test_hebrew_idea(self) -> None:

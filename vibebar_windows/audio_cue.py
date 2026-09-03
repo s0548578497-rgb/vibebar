@@ -7,19 +7,11 @@ import math
 import os
 from pathlib import Path
 import struct
-from typing import Protocol
 import wave
 import winsound
 
-
-class AudioCue(Protocol):
-    def play(self) -> bool: ...
-
-
-class NullAudioCue:
-    def play(self) -> bool:
-        return False
-
+from vibebar_modular.platform_contracts import AudioCue
+from vibebar_modular.platform_nulls import NullAudioCue
 
 class WindowsWaveCue:
     """Play a short WAV through the normal Windows waveform audio path."""

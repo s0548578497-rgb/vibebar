@@ -4,23 +4,13 @@ from __future__ import annotations
 
 import ctypes
 import threading
-from typing import Callable, Protocol
+from typing import Callable
+
+from vibebar_modular.platform_contracts import JournalChangeListener
+from vibebar_modular.platform_nulls import NullJournalChangeListener
 
 
 EVENT_NAME = "Local\\VibeBarJournalChanged"
-
-
-class JournalChangeListener(Protocol):
-    def start(self) -> None: ...
-    def close(self) -> None: ...
-
-
-class NullJournalChangeListener:
-    def start(self) -> None:
-        return None
-
-    def close(self) -> None:
-        return None
 
 
 class WindowsJournalChangeListener:
