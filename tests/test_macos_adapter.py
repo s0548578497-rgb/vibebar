@@ -9,6 +9,7 @@ from vibebar_macos.audio_cue import MacAudioCue
 from vibebar_macos.bluetooth import NullBluetoothConnectionSocket, SystemProfilerBluetoothSocket
 from vibebar_macos.menu import _journal_sections, render
 from vibebar_macos.voice_state import VoiceState
+from vibebar_macos.voice_backend import VoiceBackend, VoiceBackendStore
 from vibebar_modular.contracts import CommandResult
 from vibebar_modular.nulls import NullRecycleBin
 from vibebar_modular.compositions import get_composition
@@ -55,7 +56,7 @@ class MacAdapterTests(unittest.TestCase):
         menu = render(ROOT, assemble_macos(ROOT))
         actions = {
             "add", "daily", "rebuild", "weekly", "publish", "category",
-            "command-add", "command-delete", "voice", "language", "journal",
+            "command-add", "command-delete", "voice-backend", "language", "journal",
         }
         for action in actions:
             self.assertIn(f"param3={action}", menu)
@@ -78,6 +79,15 @@ class MacAdapterTests(unittest.TestCase):
             self.assertTrue(state.enabled())
             self.assertFalse(state.toggle())
             self.assertFalse(VoiceState(state.path).enabled())
+
+    def test_original_margulan_voice_pipeline_is_the_default(self) -> None:
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as folder:
+            store = VoiceBackendStore(Path(folder) / "voice.json")
+            self.assertIs(store.load(), VoiceBackend.ORIGINAL)
+            store.save(VoiceBackend.CPP)
+            self.assertIs(store.load(), VoiceBackend.CPP)
 
 
 if __name__ == "__main__":

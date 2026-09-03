@@ -9,7 +9,7 @@ import subprocess
 
 from .assembly import MacSocketSet, assemble_macos
 from .dialogs import ask, choose
-from .voice_state import VoiceState
+from .voice_backend import VoiceBackend, VoiceBackendStore
 
 
 def main() -> None:
@@ -30,9 +30,8 @@ def _dispatch(root: Path, sockets: MacSocketSet, action: str, value: str | None)
             sockets.core.entry.submit(text)
     elif action == "language":
         sockets.language.switch()
-    elif action == "voice":
-        VoiceState(root / "macos" / "voice.json").toggle()
-        _restart_voice()
+    elif action == "voice-backend":
+        _select_voice_backend(root, sockets)
     elif action == "daily":
         _digest(sockets, days=1, rebuild=False)
     elif action == "rebuild":
@@ -79,6 +78,16 @@ def _add_command(sockets: MacSocketSet) -> None:
     kind = choose(sockets.language.catalog.text("command_kind"), ("task", "idea", "todo", "pause"))
     if phrase and kind:
         sockets.commands.add(phrase, kind)
+
+
+def _select_voice_backend(root: Path, sockets: MacSocketSet) -> None:
+    language = sockets.language.catalog.code
+    backends = tuple(VoiceBackend)
+    labels = tuple(backend.label(language) for backend in backends)
+    selected = choose(sockets.language.catalog.text("voice_on"), labels)
+    if selected:
+        VoiceBackendStore(root / "macos" / "voice.json").save(backends[labels.index(selected)])
+        _restart_voice()
 
 
 def _delete_command(sockets: MacSocketSet) -> None:

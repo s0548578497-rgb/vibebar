@@ -11,7 +11,7 @@ import sys
 from collections.abc import Callable
 
 from .assembly import MacSocketSet, assemble_macos
-from .voice_state import VoiceState
+from .voice_backend import VoiceBackendStore
 from vibebar_modular.task_timer import JournalTaskTimerSocket
 
 
@@ -25,7 +25,7 @@ def render(root: Path, sockets: MacSocketSet) -> str:
     command = f"{root / '.venv-macos' / 'bin' / 'python'} -m vibebar_macos.menu_actions"
     journal = _journal_path()
     sections = _journal_sections(journal)
-    voice = VoiceState(root / "macos" / "voice.json").enabled()
+    voice = VoiceBackendStore(root / "macos" / "voice.json").load()
     timer = JournalTaskTimerSocket(journal, sockets.core.clock).load().display(sockets.core.clock.now())
     lines = [f"▶ {timer}", "---", _action(t("submit"), command, "add")]
     for key in ("tasks", "breaks", "ideas", "todos"):
@@ -36,7 +36,7 @@ def render(root: Path, sockets: MacSocketSet) -> str:
     lines += [_action(t("weekly_digest"), command, "weekly"), _action(t("publish_digest"), command, "publish")]
     lines += ["---", _action(t("categories"), command, "category")]
     lines += [_action(t("add_command"), command, "command-add"), _action(t("delete"), command, "command-delete")]
-    lines += [_action(t("voice_on" if voice else "voice_off"), command, "voice")]
+    lines += [_action(voice.label(sockets.language.catalog.code), command, "voice-backend")]
     lines += [_action(t("language"), command, "language"), _action(t("edit_journal"), command, "journal")]
     return "\n".join(lines)
 

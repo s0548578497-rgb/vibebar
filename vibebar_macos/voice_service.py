@@ -11,7 +11,7 @@ from vibebar_voice.diagnostics import JsonLineDiagnosticLog
 
 from .assembly import assemble_macos
 from .hotkey import MacGlobalHotkey
-from .voice_state import VoiceState
+from .voice_backend import VoiceBackend, VoiceBackendStore
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
     sockets = assemble_macos(root)
     diagnostics = JsonLineDiagnosticLog(root / "macos" / "diagnostics.jsonl", sockets.core.clock)
     stopped = threading.Event()
-    enabled = VoiceState(root / "macos" / "voice.json").enabled()
+    backend = VoiceBackendStore(root / "macos" / "voice.json").load()
 
     def status(value: str) -> None:
         diagnostics.event("voice_status", value=value)
@@ -42,11 +42,11 @@ def main() -> None:
     hotkey = MacGlobalHotkey(voice.request_command, status)
     signal.signal(signal.SIGTERM, lambda _number, _frame: stopped.set())
     signal.signal(signal.SIGINT, lambda _number, _frame: stopped.set())
-    if enabled:
+    if backend is VoiceBackend.CPP:
         hotkey.start()
         voice.start()
     stopped.wait()
-    if enabled:
+    if backend is VoiceBackend.CPP:
         hotkey.close()
         voice.close()
 
