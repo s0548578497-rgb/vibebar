@@ -20,6 +20,7 @@ from .assembly import (
     assemble_wakeword,
     assemble_audio_cue,
     assemble_diagnostics,
+    assemble_bluetooth_devices,
     assemble_windows,
     default_environment,
     rebuild_command_entry,
@@ -32,8 +33,7 @@ from .view_model import ActivityItem, VibeBarView
 from .voice import VoiceController
 from .diagnostics import text_fingerprint
 from .journal_events import WindowsJournalChangeListener
-
-
+from .bluetooth_panel import BluetoothDevicePanel
 class VibeBarWindow:
     def __init__(self, repository: Path) -> None:
         self.repository = repository
@@ -70,6 +70,8 @@ class VibeBarWindow:
         self.timer_state = self.task_timer.load()
         self.timer_job: str | None = None
         self.category_panel = CategoryPanel(self.categories, self.t, lambda: self.language.catalog.code)
+        bluetooth = assemble_bluetooth_devices(repository)
+        self.bluetooth_panel = BluetoothDevicePanel(bluetooth.provider, bluetooth.store, self.t)
         self._configure_window()
         self._build()
         self._start_tray()
@@ -118,6 +120,7 @@ class VibeBarWindow:
         self._clipboard_tab(notebook)
         self._reports_tab(notebook)
         self.category_panel.build(notebook)
+        self.bluetooth_panel.build(notebook)
         self._commands_tab(notebook)
     def _commands_tab(self, notebook: ttk.Notebook) -> None:
         frame = ttk.Frame(notebook, padding=8)
@@ -389,12 +392,8 @@ class VibeBarWindow:
 
     def run(self) -> None:
         self.root.mainloop()
-
-
 def main() -> None:
     repository = Path(__file__).resolve().parents[1]
     VibeBarWindow(repository).run()
-
-
 if __name__ == "__main__":
     main()

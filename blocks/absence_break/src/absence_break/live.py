@@ -9,6 +9,8 @@ from bluetooth_proximity.engine import ProximityEngine
 from bluetooth_proximity.models import ProximityState
 from bluetooth_proximity.windows_source import WindowsClassicRssiSource
 from bluetooth_proximity.resilience import RestartingSignalSource, SourceHealthSink
+from bluetooth_proximity.resilience import ExponentialReconnectPolicy
+from bluetooth_proximity.devices import BluetoothDevice, JsonSelectedDeviceStore, SwitchingSignalSource
 
 from .clock import SystemClock
 from .coordinator import AbsenceCoordinator
@@ -56,9 +58,17 @@ def main() -> None:
     clock = SystemClock()
     log = runtime / "events.jsonl"
     reader = proximity / "native" / "ClassicRssiReader.exe"
-    source = RestartingSignalSource(
-        lambda: WindowsClassicRssiSource(reader, "JBL TUNE125BT"),
-        health=JsonHealthSink(log, clock),
+    selected = JsonSelectedDeviceStore(
+        proximity / "runtime" / "selected_device.json",
+        BluetoothDevice("legacy-jbl-tune125bt", "JBL TUNE125BT"),
+    )
+    source = SwitchingSignalSource(
+        selected,
+        lambda device: RestartingSignalSource(
+            lambda: WindowsClassicRssiSource(reader, device.name),
+            health=JsonHealthSink(log, clock),
+            reconnect=ExponentialReconnectPolicy(),
+        ),
     )
     _log(log, "MONITOR_STARTED", clock.now().isoformat(), pid=os.getpid())
     previous = ProximityState.UNKNOWN

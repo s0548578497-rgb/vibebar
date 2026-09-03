@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from bluetooth_proximity.models import SignalSample
-from bluetooth_proximity.resilience import RestartingSignalSource
+from bluetooth_proximity.resilience import ExponentialReconnectPolicy, RestartingSignalSource
 
 
 class FakeSource:
@@ -24,6 +24,14 @@ class RecordingHealth:
 
     def report(self, event: str) -> None:
         self.events.append(event)
+
+
+class FakeMonotonic:
+    def __init__(self) -> None:
+        self.value = 0.0
+
+    def __call__(self) -> float:
+        return self.value
 
 
 class ResilienceTests(unittest.TestCase):
@@ -47,6 +55,27 @@ class ResilienceTests(unittest.TestCase):
         self.assertFalse(source.read().connected)
         self.assertTrue(disconnected.closed)
         self.assertEqual(source.read().rssi, -3)
+
+    def test_backoff_avoids_reader_and_log_restart_loops(self) -> None:
+        clock = FakeMonotonic()
+        sources: list[FakeSource] = []
+        health = RecordingHealth()
+
+        def factory() -> FakeSource:
+            source = FakeSource([SignalSample(None, connected=False)])
+            sources.append(source)
+            return source
+
+        source = RestartingSignalSource(
+            factory, health=health, reconnect=ExponentialReconnectPolicy((2.0, 5.0)), monotonic=clock
+        )
+        source.read()
+        source.read()
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(health.events.count("SOURCE_DISCONNECTED"), 1)
+        clock.value = 2.0
+        source.read()
+        self.assertEqual(len(sources), 2)
 
 
 if __name__ == "__main__":

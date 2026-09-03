@@ -30,6 +30,8 @@ from .audio_cue import AudioCue, WindowsWaveCue
 from .diagnostics import DiagnosticLog, JsonLineDiagnosticLog
 from .break_view import CombinedMenuViewSocket, JournalBreakViewSocket
 from typing import Callable
+from bluetooth_proximity.devices import BluetoothDevice, BluetoothDeviceProvider, JsonSelectedDeviceStore, SelectedDeviceStore
+from bluetooth_proximity.windows_devices import WindowsBluetoothDeviceProvider
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +44,18 @@ class CommandSocketSet:
 class CategorySocketSet:
     service: CategoryService
     reports: CategoryReportWriter
+
+
+@dataclass(frozen=True, slots=True)
+class BluetoothDeviceSocketSet:
+    provider: BluetoothDeviceProvider
+    store: SelectedDeviceStore
+
+
+def assemble_bluetooth_devices(repository: Path) -> BluetoothDeviceSocketSet:
+    path = repository / "blocks" / "bluetooth_proximity" / "runtime" / "selected_device.json"
+    fallback = BluetoothDevice("legacy-jbl-tune125bt", "JBL TUNE125BT")
+    return BluetoothDeviceSocketSet(WindowsBluetoothDeviceProvider(), JsonSelectedDeviceStore(path, fallback))
 
 
 def assemble_commands(repository: Path, inner: EntrySocket) -> CommandSocketSet:

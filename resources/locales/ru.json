@@ -49,5 +49,13 @@
   "assign_category": "Назначить номер",
   "time": "Время",
   "daily_category_summary": "Итоги категорий за день",
-  "weekly_category_summary": "Итоги категорий за неделю"
+  "weekly_category_summary": "Итоги категорий за неделю",
+  "bluetooth_device": "Устройство-маркер Bluetooth",
+  "refresh_devices": "Обновить устройства",
+  "use_marker_device": "Использовать как маркер",
+  "connected": "Подключено",
+  "known_device": "Известно",
+  "device_scan_empty": "Устройства Bluetooth не найдены",
+  "no_device_selected": "Выберите устройство",
+  "marker_device_saved": "Устройство-маркер сохранено"
 }

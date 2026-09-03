@@ -49,5 +49,13 @@
   "assign_category": "Assign number",
   "time": "Time",
   "daily_category_summary": "Daily category totals",
-  "weekly_category_summary": "Weekly category totals"
+  "weekly_category_summary": "Weekly category totals",
+  "bluetooth_device": "Bluetooth marker device",
+  "refresh_devices": "Refresh devices",
+  "use_marker_device": "Use as marker device",
+  "connected": "Connected",
+  "known_device": "Known",
+  "device_scan_empty": "No Bluetooth devices found",
+  "no_device_selected": "Select a device",
+  "marker_device_saved": "Marker device saved"
 }

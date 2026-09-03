@@ -49,5 +49,13 @@
   "assign_category": "שייך מספר",
   "time": "שעה",
   "daily_category_summary": "סיכום קטגוריות יומי",
-  "weekly_category_summary": "סיכום קטגוריות שבועי"
+  "weekly_category_summary": "סיכום קטגוריות שבועי",
+  "bluetooth_device": "התקן Bluetooth מסמן",
+  "refresh_devices": "רענן התקנים",
+  "use_marker_device": "השתמש כהתקן מסמן",
+  "connected": "מחובר",
+  "known_device": "מוכר",
+  "device_scan_empty": "לא נמצאו התקני Bluetooth",
+  "no_device_selected": "יש לבחור התקן",
+  "marker_device_saved": "ההתקן המסמן נשמר"
 }
