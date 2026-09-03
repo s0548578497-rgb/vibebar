@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+from datetime import datetime
 from pathlib import Path
 
 from .models import AbsenceState, PresenceStatus
@@ -20,7 +22,7 @@ class JsonStateStore:
             pending = value.get("pending_since")
             cause = value.get("cause")
             return AbsenceState(
-                pending_since=None if pending is None else __import__("datetime").datetime.fromisoformat(pending),
+                pending_since=None if pending is None else datetime.fromisoformat(pending),
                 cause=None if cause is None else PresenceStatus(cause),
                 confirmed=bool(value.get("confirmed")),
             )
@@ -34,6 +36,14 @@ class JsonStateStore:
             "confirmed": state.confirmed,
         }
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = self.path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(value, indent=2), encoding="utf-8")
-        temporary.replace(self.path)
+        payload = json.dumps(value, indent=2)
+        temporary = self.path.with_name(f".{self.path.name}.{os.getpid()}.tmp")
+        temporary.write_text(payload, encoding="utf-8")
+        try:
+            temporary.replace(self.path)
+        except PermissionError:
+            # Windows indexers may briefly hold the existing file open.  A
+            # direct write is less crash-safe, but losing monitor state or the
+            # whole background service is worse than that narrow fallback.
+            self.path.write_text(payload, encoding="utf-8")
+            temporary.unlink(missing_ok=True)

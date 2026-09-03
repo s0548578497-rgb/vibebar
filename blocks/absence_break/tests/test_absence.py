@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from absence_break.contracts import NullBreakWriter, NullStateStore
 from absence_break.coordinator import AbsenceCoordinator
@@ -53,6 +54,14 @@ class AbsenceTests(unittest.TestCase):
             store = JsonStateStore(Path(directory) / "state.json")
             state = AbsenceState(START, PresenceStatus.FAR, False)
             store.save(state)
+            self.assertEqual(store.load(), state)
+
+    def test_state_falls_back_when_windows_blocks_atomic_replace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = JsonStateStore(Path(directory) / "state.json")
+            state = AbsenceState(START, PresenceStatus.FAR, False)
+            with patch.object(Path, "replace", side_effect=PermissionError("busy")):
+                store.save(state)
             self.assertEqual(store.load(), state)
 
     def test_null_boundaries_are_safe(self) -> None:
