@@ -16,7 +16,7 @@ remain the original implementation.
 - fully local `Hey Jarvis` wake word followed by the existing whisper.cpp
   Large-v3-Turbo/Vulkan engine from the parent `kodex` workspace.
 
-Language catalogs are independent JSON files in `windows/locales`. Adding a
+Language catalogs are shared JSON files in `resources/locales`. Adding a
 language requires one new catalog with the same keys; no UI code changes.
 
 ## Requirements and setup

@@ -10,6 +10,7 @@ PACKAGES = (
     ROOT / "vibebar_modular",
     ROOT / "vibebar_windows",
     ROOT / "vibebar_macos",
+    ROOT / "vibebar_voice",
     ROOT / "windows" / "helpers",
 )
 
@@ -65,6 +66,12 @@ class ArchitectureRulesTests(unittest.TestCase):
         source = (ROOT / "vibebar_windows" / "app.py").read_text(encoding="utf-8")
         self.assertNotIn("after(3000", source)
         self.assertNotIn("_refresh_tick", source)
+
+    def test_platform_adapters_do_not_import_each_other(self) -> None:
+        mac = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "vibebar_macos").glob("*.py"))
+        windows = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "vibebar_windows").glob("*.py"))
+        self.assertNotIn("vibebar_windows", mac)
+        self.assertNotIn("vibebar_macos", windows)
 
     def _calls_named(self, name: str) -> list[str]:
         violations: list[str] = []

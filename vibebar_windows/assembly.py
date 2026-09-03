@@ -54,7 +54,7 @@ def assemble_transcriber(repository: Path) -> AudioTranscriber:
 
 
 def assemble_wakeword(repository: Path) -> WakeWordSettings:
-    return WakeWordSettings.load(repository / "windows" / "wakeword.json")
+    return WakeWordSettings.load(repository / "resources" / "wakeword.json")
 
 
 def assemble_audio_cue() -> AudioCue:
@@ -70,7 +70,7 @@ def assemble_task_timer(journal: Path, clock: Clock) -> TaskTimerSocket:
 
 
 def assemble_categories(repository: Path, journal: Path, clock: Clock) -> CategorySocketSet:
-    catalog = load_categories(repository / "windows" / "categories.json")
+    catalog = load_categories(repository / "resources" / "categories.json")
     store = JsonClassificationRepository(repository / "windows" / "classifications.json")
     return CategorySocketSet(CategoryService(journal, catalog, store, clock), MarkdownCategoryReportWriter())
 

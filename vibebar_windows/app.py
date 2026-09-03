@@ -49,7 +49,7 @@ class VibeBarWindow:
         self.entry = commands.entry
         self.view_socket = assemble_menu_view(repository, environment, self.sockets.clock)
         self.composition = get_composition("windows")
-        self.language = LanguageController(repository / "windows" / "locales", repository / "windows" / "settings.json")
+        self.language = LanguageController(repository / "resources" / "locales", repository / "windows" / "settings.json")
         self.root = tk.Tk()
         self.journal_listener = WindowsJournalChangeListener(lambda: self.root.after(0, self.refresh))
         self.text = tk.StringVar()

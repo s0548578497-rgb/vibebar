@@ -66,7 +66,7 @@ class StaticBreaks:
 
 class LanguageTests(unittest.TestCase):
     def test_language_switch_is_persisted_and_replaceable(self) -> None:
-        locale_dir = ROOT / "windows" / "locales"
+        locale_dir = ROOT / "resources" / "locales"
         with tempfile.TemporaryDirectory(dir=ROOT) as directory:
             settings = Path(directory) / "settings.json"
             controller = LanguageController(locale_dir, settings)
@@ -75,7 +75,7 @@ class LanguageTests(unittest.TestCase):
             self.assertEqual(json.loads(settings.read_text(encoding="utf-8"))["language"], "ru")
 
     def test_every_locale_has_the_same_contract(self) -> None:
-        locale_dir = ROOT / "windows" / "locales"
+        locale_dir = ROOT / "resources" / "locales"
         catalogs = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(locale_dir.glob("*.json"))]
         expected = set(catalogs[0])
         self.assertTrue(all(set(catalog) == expected for catalog in catalogs[1:]))

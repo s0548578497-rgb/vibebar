@@ -9,6 +9,7 @@ from vibebar_macos.audio_cue import MacAudioCue
 from vibebar_macos.bluetooth import NullBluetoothConnectionSocket, SystemProfilerBluetoothSocket
 from vibebar_modular.contracts import CommandResult
 from vibebar_modular.nulls import NullRecycleBin
+from vibebar_modular.compositions import get_composition
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,6 +44,10 @@ class MacAdapterTests(unittest.TestCase):
         sockets = assemble_macos(ROOT)
         self.assertIsInstance(sockets.bluetooth, NullBluetoothConnectionSocket)
         self.assertIsInstance(sockets.core.recycle_bin, NullRecycleBin)
+
+    def test_macos_and_windows_expose_the_same_actions(self) -> None:
+        sockets = assemble_macos(ROOT)
+        self.assertEqual(sockets.composition.actions, get_composition("windows").actions)
 
 
 if __name__ == "__main__":

@@ -21,14 +21,14 @@
 | תפריט | SwiftBar וה־URL המקורי לרענון | מחובר |
 | פתיחת קבצים | הפקודה `open` | מחובר |
 | צליל אישור | `afplay` וצליל מערכת | מחובר |
-| קיצור הקלטה | בבעלות Superwhisper | מואצל, ללא קיצור כפול |
+| קיצור הקלטה | `pynput` והרשאת Accessibility | מחובר |
 | שינוי יומן | רענון SwiftBar הקיים | Null בטוח בתהליך Python |
-| מצב חיבור Bluetooth | `system_profiler` JSON | אופציונלי |
-| מרחק Bluetooth RSSI | אין API אמין שחובר | Null; אסור להסיק מרחק מחיבור |
+| מצב חיבור Bluetooth | `system_profiler` JSON | שקע גיבוי אופציונלי |
+| מרחק Bluetooth RSSI | helper ב־Swift מעל `IOBluetoothDevice.rawRSSI()` | מחובר; דורש כיול חומרה |
 
-שקע Bluetooth של macOS מדווח רק `מחובר`, `מנותק` או `לא ידוע`. הוא אינו מייצר
-ערך RSSI מלאכותי. כך אפשר בעתיד לחבר מקור CoreBluetooth או כלי אחר בלי לשנות
-את מנוע ההפסקות.
+שקע Bluetooth של macOS קורא RSSI אמיתי דרך API של Apple. ערך `127`, ש־Apple
+מגדירה כלא זמין או מנותק, אינו הופך למרחק מלאכותי. קורא ששותק נעטף באותו
+`RestartingSignalSource` של Windows, ומנוע החציון וההפסקות משותף לשניהם.
 
 ## בדיקה בלי Mac מקומי
 

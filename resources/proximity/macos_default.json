@@ -1,0 +1,7 @@
+{
+  "near_threshold": -60,
+  "far_threshold": -78,
+  "window_size": 5,
+  "confirmations": 4,
+  "missing_limit": 5
+}

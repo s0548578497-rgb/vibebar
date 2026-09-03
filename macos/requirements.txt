@@ -1,0 +1,5 @@
+numpy>=1.26,<3
+openwakeword>=0.6,<1
+onnxruntime>=1.18,<2
+sounddevice>=0.5,<1
+pynput>=1.7,<2

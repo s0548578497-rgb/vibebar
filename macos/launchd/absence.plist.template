@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.vibebar.absence</string>
+  <key>ProgramArguments</key>
+  <array><string>__PYTHON__</string><string>-m</string><string>vibebar_macos.absence_service</string></array>
+  <key>WorkingDirectory</key><string>__ROOT__</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PYTHONPATH</key><string>__ROOT__:__ROOT__/blocks/absence_break/src:__ROOT__/blocks/bluetooth_proximity/src</string>
+    <key>VIBEBAR_BLUETOOTH_DEVICE</key><string>__DEVICE__</string>
+  </dict>
+  <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+  <key>StandardErrorPath</key><string>__ROOT__/macos/absence.err.log</string>
+  <key>StandardOutPath</key><string>__ROOT__/macos/absence.out.log</string>
+</dict></plist>

@@ -13,6 +13,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify shell scripts
-        run: bash -n bin/*.sh install.sh uninstall.sh
+        run: bash -n bin/*.sh macos/*.sh install.sh uninstall.sh
+      - name: Verify launch agents
+        run: for file in macos/launchd/*.plist.template; do plutil -lint "$file"; done
+      - name: Compile native Bluetooth RSSI helper
+        run: macos/native/build.sh
+      - name: Install test dependency
+        run: python -m pip install "numpy>=1.26,<3"
       - name: Test platform-neutral and macOS adapters
-        run: python -m unittest tests.test_modularity tests.test_macos_adapter tests.test_architecture_rules
+        env:
+          PYTHONPATH: ${{ github.workspace }}/blocks/bluetooth_proximity/src
+        run: python -m unittest tests.test_modularity tests.test_macos_adapter tests.test_architecture_rules blocks.bluetooth_proximity.tests.test_macos_source

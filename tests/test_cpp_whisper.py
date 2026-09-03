@@ -10,6 +10,7 @@ import winsound
 import numpy as np
 
 from vibebar_windows.cpp_whisper import TurboPaths, _save_wav
+from vibebar_voice.cpp_whisper import _multipart
 from vibebar_windows.transcription import NullAudioTranscriber
 from vibebar_windows.audio_cue import NullAudioCue, WindowsWaveCue
 
@@ -25,8 +26,20 @@ class TurboPathsTests(unittest.TestCase):
         self.assertIn("large-v3-turbo", paths.model.name)
         self.assertEqual(paths.adapter.name, "turbo.py")
 
+    def test_macos_paths_are_repository_local_and_have_no_windows_adapter(self) -> None:
+        paths = TurboPaths.discover_macos(ROOT)
+        self.assertEqual(paths.server.name, "whisper-server")
+        self.assertIsNone(paths.vulkan_bin)
+        self.assertIsNone(paths.adapter)
+        self.assertIn("macos", paths.server.parts)
+
 
 class AudioBoundaryTests(unittest.TestCase):
+    def test_builtin_server_request_contains_audio_and_parameters(self) -> None:
+        body = _multipart("boundary", b"wave", 2)
+        self.assertIn(b'name="file"', body)
+        self.assertIn(b'name="beam_size"', body)
+        self.assertIn(b"wave", body)
     def test_temporary_wav_contract_is_16khz_mono_pcm(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT) as directory:
             path = Path(directory) / "audio.wav"

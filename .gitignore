@@ -14,6 +14,14 @@ config.env.real
 __pycache__/
 *.py[cod]
 .venv-windows/
+.venv-macos/
+macos/deps/
+macos/native/ClassicRssiReader
+macos/runtime/
+macos/*.log
+macos/settings.json
+macos/custom_commands.json
+macos/classifications.json
 windows/settings.json
 windows/custom_commands.json
 windows/classifications.json

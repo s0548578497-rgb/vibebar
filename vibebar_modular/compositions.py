@@ -51,11 +51,12 @@ WINDOWS = Composition(
     }),
 )
 
+MACOS = Composition("macos", frozenset(Action))
 FULL = Composition("full", frozenset(Action))
 
 
 def get_composition(name: str) -> Composition:
-    compositions = {PILOT.name: PILOT, WINDOWS.name: WINDOWS, FULL.name: FULL}
+    compositions = {PILOT.name: PILOT, WINDOWS.name: WINDOWS, MACOS.name: MACOS, FULL.name: FULL}
     if name not in compositions:
         raise ValueError(f"unknown composition: {name}")
     return compositions[name]
