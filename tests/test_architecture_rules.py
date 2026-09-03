@@ -15,7 +15,6 @@ CODE_ROOTS = (
     ROOT / "blocks" / "absence_break",
     ROOT / "blocks" / "bluetooth_proximity",
     ROOT / "tests",
-    ROOT / "video" / "tools",
 )
 
 

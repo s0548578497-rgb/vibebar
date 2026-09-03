@@ -30,10 +30,6 @@ blocks/bluetooth_proximity/.venv-proximity/
 blocks/bluetooth_proximity/native/ClassicRssiReader.exe
 blocks/absence_break/runtime/
 
-# generated demo-video intermediates (the final MP4 is committed)
-video/audio/
-video/segments/
-video/subtitles/
-video/contact-sheet*.png
-video/preview*.png
-video/validation.json
+# Presentation sources and renders live outside the code repository. The
+# reviewable video is published as a GitHub Release asset.
+video/

@@ -10,8 +10,8 @@ packs, user-defined voice commands, local `Hey Computer` activation,
 absence detection with a five-minute retroactive break rule, safe Null adapters
 and cross-platform tests.
 
-- [Watch the Russian presentation](video/vibebar-russian-demo.mp4)
-- [Read the complete Russian feature comparison](video/description-ru.md)
+- [Watch the Russian presentation](https://github.com/s0548578497-rgb/vibebar/releases/download/v0.1.0-preview/vibebar-russian-demo.mp4)
+- [Read the complete Russian feature comparison](docs/fork-features-ru.md)
 - [Windows installation](windows/README.md)
 - [macOS modular installation](macos/README.md)
 - [Architecture and safety rules](ARCHOV.md)
