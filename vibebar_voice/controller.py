@@ -16,13 +16,14 @@ from vibebar_modular.platform_nulls import NullAudioCue
 
 from .transcription import AudioTranscriber
 from .diagnostics import DiagnosticLog, NullDiagnosticLog, text_fingerprint
+from .speech_boundary import AdaptiveBoundarySettings, AdaptiveSpeechBoundary, SpeechBoundary
 
 
 @dataclass(frozen=True, slots=True)
 class CaptureSettings:
     speech_level: float = 120.0
     start_timeout_blocks: int = 100
-    trailing_silence_blocks: int = 20
+    trailing_silence_blocks: int = 19
     maximum_blocks: int = 375
 
 
@@ -48,6 +49,7 @@ class VoiceController:
         cue: AudioCue | None = None,
         diagnostics: DiagnosticLog | None = None,
         capture: CaptureSettings | None = None,
+        boundary_factory: Callable[[], SpeechBoundary] | None = None,
     ) -> None:
         self.on_text = on_text
         self.on_status = on_status
@@ -58,6 +60,10 @@ class VoiceController:
         self.cue = cue or NullAudioCue()
         self.diagnostics = diagnostics or NullDiagnosticLog()
         self.capture = capture or CaptureSettings()
+        seconds = self.capture.trailing_silence_blocks * 1_280 / 16_000
+        self.boundary_factory = boundary_factory or (
+            lambda: AdaptiveSpeechBoundary(AdaptiveBoundarySettings(end_silence_seconds=seconds))
+        )
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.requested = False
@@ -136,12 +142,16 @@ class VoiceController:
             self.command_lock.release()
 
     def _handle_command(self, stream: object, ignore_stop: bool = False) -> None:
+        boundary = self.boundary_factory()
+        for _block in range(boundary.calibration_blocks):
+            frame, _overflowed = stream.read(1_280)
+            boundary.calibrate(np.asarray(frame[:, 0], dtype=np.int16))
         self.diagnostics.event("cue_started")
         played = self.cue.play()
         self.diagnostics.event("cue_completed", queued=played)
         self.on_status("voice_command")
         self.diagnostics.event("capture_started")
-        audio = self._capture_command(stream, ignore_stop)
+        audio = self._capture_command(stream, ignore_stop, boundary)
         self.diagnostics.event("capture_completed", samples=int(audio.size))
         self.diagnostics.event("transcription_started")
         text = self.transcriber.transcribe(audio)
@@ -169,11 +179,14 @@ class VoiceController:
             embedding_model_path=str(self.model_dir / required[2]),
         )
 
-    def _capture_command(self, stream: object, ignore_stop: bool = False) -> np.ndarray:
+    def _capture_command(
+        self, stream: object, ignore_stop: bool = False, boundary: SpeechBoundary | None = None,
+    ) -> np.ndarray:
         frames: list[np.ndarray] = []
-        silent_blocks = 0
+        detector = boundary or self.boundary_factory()
         speech_seen = False
         maximum_level = 0.0
+        maximum_threshold = 0.0
         reason = "maximum_duration"
         for block_index in range(self.capture.maximum_blocks):
             if self.stop_event.is_set() and not ignore_stop:
@@ -182,21 +195,19 @@ class VoiceController:
             frame, _overflowed = stream.read(1_280)
             mono = np.asarray(frame[:, 0], dtype=np.int16)
             frames.append(mono)
-            level = float(np.sqrt(np.mean(mono.astype(np.float32) ** 2)))
-            maximum_level = max(maximum_level, level)
-            if level >= self.capture.speech_level:
-                speech_seen = True
-                silent_blocks = 0
-            elif speech_seen:
-                silent_blocks += 1
-            if speech_seen and silent_blocks >= self.capture.trailing_silence_blocks:
+            decision = detector.observe(mono)
+            speech_seen = decision.speech_seen
+            maximum_level = max(maximum_level, decision.level)
+            maximum_threshold = max(maximum_threshold, decision.threshold)
+            if decision.finished:
                 reason = "silence_after_speech"
                 break
             if not speech_seen and block_index + 1 >= self.capture.start_timeout_blocks:
                 reason = "no_speech"
                 break
         self.diagnostics.event(
-            "capture_stopped", reason=reason, speech_seen=speech_seen, maximum_level=round(maximum_level, 1)
+            "capture_stopped", reason=reason, speech_seen=speech_seen,
+            maximum_level=round(maximum_level, 1), threshold=round(maximum_threshold, 1),
         )
         return np.concatenate(frames) if frames else np.array([], dtype=np.int16)
 

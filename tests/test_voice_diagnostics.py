@@ -12,6 +12,7 @@ from vibebar_modular.clock import FixedClock
 from vibebar_windows.diagnostics import JsonLineDiagnosticLog, text_fingerprint
 from vibebar_windows.transcription import NullAudioTranscriber
 from vibebar_windows.voice import CaptureSettings, VoiceController
+from vibebar_voice.speech_boundary import AdaptiveBoundarySettings, AdaptiveSpeechBoundary
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +52,19 @@ class CapturePolicyTests(unittest.TestCase):
         self.assertEqual(stream.reads, 8)
         self.assertEqual(audio.size, 8 * 1_280)
         self.assertEqual(trace.events[-1][1]["reason"], "silence_after_speech")
+
+    def test_adaptive_boundary_learns_constant_background_noise(self) -> None:
+        settings = AdaptiveBoundarySettings(
+            calibration_seconds=0.16, end_silence_seconds=0.16, noise_multiplier=1.6,
+        )
+        boundary = AdaptiveSpeechBoundary(settings)
+        noise = np.full(1_280, 300, dtype=np.int16)
+        for _index in range(boundary.calibration_blocks):
+            boundary.calibrate(noise)
+        speech = boundary.observe(np.full(1_280, 900, dtype=np.int16))
+        self.assertTrue(speech.speech_seen)
+        self.assertFalse(boundary.observe(noise).finished)
+        self.assertTrue(boundary.observe(noise).finished)
 
 
 class DiagnosticLogTests(unittest.TestCase):
