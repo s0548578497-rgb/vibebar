@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
+import os
 
 from vibebar_modular.platform_contracts import AudioCue, JournalChangeListener
 from vibebar_modular.platform_nulls import NullJournalChangeListener
@@ -14,6 +15,8 @@ from vibebar_modular.categories import CategoryService, JsonClassificationReposi
 from vibebar_modular.category_reports import CategoryReportWriter, MarkdownCategoryReportWriter
 from vibebar_modular.compositions import Composition, get_composition
 from vibebar_modular.language import LanguageController
+from vibebar_modular.legacy import LegacyDigestSocket
+from vibebar_modular.local_digests import LocalDigestSocket
 from vibebar_modular.runner import SubprocessRunner
 from vibebar_modular.sockets import SocketSet, build_sockets
 from vibebar_voice.controller import WakeWordSettings
@@ -46,8 +49,9 @@ def assemble_macos(root: Path, device_name: str | None = None, allow_deletion: b
     commands = CustomCommandStore(root / "macos" / "custom_commands.json")
     words = CommandVocabulary.load(root / "resources" / "command_words.json")
     localized_entry = LocalizedEntrySocket(core.entry, words.merged(commands.aliases()))
+    journal = Path(os.environ.get("VIBEBAR_FILE", str(Path.home() / "vibebar-journal.md")))
     categories = CategoryService(
-        Path.home() / "vibebar-journal.md",
+        journal,
         load_categories(root / "resources" / "categories.json"),
         JsonClassificationRepository(root / "macos" / "classifications.json"),
         core.clock,
@@ -55,9 +59,13 @@ def assemble_macos(root: Path, device_name: str | None = None, allow_deletion: b
     bluetooth: BluetoothConnectionSocket = (
         SystemProfilerBluetoothSocket(runner, device_name) if device_name else NullBluetoothConnectionSocket()
     )
+    digest = LocalDigestSocket(
+        root, Path(os.environ.get("VIBEBAR_DIGEST_DIR", str(root / "digests"))), journal,
+        runner, LegacyDigestSocket(root, runner), core.clock,
+    )
     return MacSocketSet(
         composition=get_composition("macos"),
-        core=replace(core, entry=localized_entry),
+        core=replace(core, entry=localized_entry, digest=digest),
         audio_cue=MacAudioCue(runner),
         journal_changes=NullJournalChangeListener(),
         bluetooth=bluetooth,

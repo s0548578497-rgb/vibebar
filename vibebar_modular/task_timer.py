@@ -47,7 +47,8 @@ class JournalTaskTimerSocket:
             return TaskTimerState()
         hour, minute = (int(part) for part in last[0].split(":"))
         started = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        return TaskTimerState(last[1], started)
+        task = re.sub(r"\s*<!--.*?-->\s*$", "", last[1])
+        return TaskTimerState(task, started)
 
     def _last_timed_entry(self, day: str) -> tuple[str, str] | None:
         in_day = False

@@ -7,6 +7,8 @@ import unittest
 from vibebar_macos.assembly import assemble_macos
 from vibebar_macos.audio_cue import MacAudioCue
 from vibebar_macos.bluetooth import NullBluetoothConnectionSocket, SystemProfilerBluetoothSocket
+from vibebar_macos.menu import _journal_sections, render
+from vibebar_macos.voice_state import VoiceState
 from vibebar_modular.contracts import CommandResult
 from vibebar_modular.nulls import NullRecycleBin
 from vibebar_modular.compositions import get_composition
@@ -48,6 +50,34 @@ class MacAdapterTests(unittest.TestCase):
     def test_macos_and_windows_expose_the_same_actions(self) -> None:
         sockets = assemble_macos(ROOT)
         self.assertEqual(sockets.composition.actions, get_composition("windows").actions)
+
+    def test_every_declared_desktop_control_is_reachable_from_swiftbar(self) -> None:
+        menu = render(ROOT, assemble_macos(ROOT))
+        actions = {
+            "add", "daily", "rebuild", "weekly", "publish", "category",
+            "command-add", "command-delete", "voice", "language", "journal",
+        }
+        for action in actions:
+            self.assertIn(f"param3={action}", menu)
+
+    def test_breaks_are_not_hidden_by_the_macos_menu(self) -> None:
+        from tempfile import TemporaryDirectory
+        from datetime import date
+
+        with TemporaryDirectory() as folder:
+            journal = Path(folder) / "journal.md"
+            journal.write_text(f"## {date.today().isoformat()}\n- 09:15 · ⏸ אוכל\n", encoding="utf-8")
+            sections = _journal_sections(journal)
+        self.assertEqual(sections["breaks"], [("09:15", "אוכל")])
+
+    def test_voice_switch_is_persistent_and_defaults_to_safe_compatibility(self) -> None:
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as folder:
+            state = VoiceState(Path(folder) / "voice.json")
+            self.assertTrue(state.enabled())
+            self.assertFalse(state.toggle())
+            self.assertFalse(VoiceState(state.path).enabled())
 
 
 if __name__ == "__main__":
