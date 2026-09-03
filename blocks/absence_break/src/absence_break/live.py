@@ -19,6 +19,7 @@ from .journal_writer import MarkdownJournalBreakWriter
 from .models import BreakEvent, PresenceStatus
 from .notifications import ChangeNotifier, WindowsNamedEventNotifier
 from .state_store import JsonStateStore
+from .windows_single_instance import WindowsNamedMutexGuard
 
 
 class LoggedBreakWriter:
@@ -43,6 +44,9 @@ class JsonHealthSink(SourceHealthSink):
 
 
 def main() -> None:
+    instance = WindowsNamedMutexGuard("Local\\VibeBarAbsenceMonitor")
+    if not instance.acquire():
+        return
     repository = Path(__file__).resolve().parents[4]
     proximity = repository / "blocks" / "bluetooth_proximity"
     runtime = repository / "blocks" / "absence_break" / "runtime"
@@ -85,6 +89,7 @@ def main() -> None:
         return
     finally:
         source.close()
+        instance.close()
 
 
 def _presence(state: ProximityState) -> PresenceStatus | None:
